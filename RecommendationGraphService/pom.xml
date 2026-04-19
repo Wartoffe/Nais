@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>rs.ac.uns.acs</groupId>
-	<artifactId>LibraryGraphService</artifactId>
+	<artifactId>RecommendationGraphService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
 	<description/>

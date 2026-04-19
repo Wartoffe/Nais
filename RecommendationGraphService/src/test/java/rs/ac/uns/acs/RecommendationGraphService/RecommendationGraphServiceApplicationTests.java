@@ -1,10 +1,10 @@
-package rs.ac.uns.acs.LibraryGraphService;
+package rs.ac.uns.acs.RecommendationGraphService;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class LibraryGraphServiceApplicationTests {
+class RecommendationGraphServiceApplicationTests {
 
 	@Test
 	void contextLoads() {

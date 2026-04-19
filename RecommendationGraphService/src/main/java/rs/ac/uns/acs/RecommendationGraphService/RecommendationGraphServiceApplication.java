@@ -1,13 +1,13 @@
-package rs.ac.uns.acs.LibraryGraphService;
+package rs.ac.uns.acs.RecommendationGraphService;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication(scanBasePackages = "rs.ac.uns.acs")
-public class LibraryGraphServiceApplication {
+public class RecommendationGraphServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(LibraryGraphServiceApplication.class, args);
+		SpringApplication.run(RecommendationGraphServiceApplication.class, args);
 	}
 
 }
