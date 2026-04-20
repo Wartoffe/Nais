@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import rs.ac.uns.acs.Service.MemberService;
 
 import java.sql.Date;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/members")
@@ -28,7 +29,7 @@ public class MemberController {
     public ResponseEntity updateBorrow(
             @RequestParam Long memberId,
             @RequestParam String bookId,
-            @RequestParam Date date) {
+            @RequestParam LocalDate date) {
 
         memberService.updateBorrowDate(memberId, bookId, date);
         return ResponseEntity.ok().build();

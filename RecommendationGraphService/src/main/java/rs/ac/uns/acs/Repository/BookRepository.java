@@ -39,5 +39,34 @@ public interface BookRepository extends Neo4jRepository<Book, String> {
             ORDER BY similarityScore DESC
             """)
     List<Book> recommendBySimilarity(Long memberId);
+    @Query("""
+            MATCH (m:Member {id: $memberId})-[:BORROWED]->(b:Book)
+            MATCH (b)-[:WRITTEN_BY]->(a:Author)<-[:WRITTEN_BY]-(rec:Book)
+            WHERE NOT (m)-[:BORROWED]->(rec)
+            RETURN rec
+            """)
+    List<Book> recommendByAuthor(Long memberId);
 
+    @Query("""
+            MATCH (m:Member {id: $memberId})-[:BORROWED]->(b:Book)
+
+            OPTIONAL MATCH (b)-[:BELONGS_TO]->(g:Genre)<-[:BELONGS_TO]-(rec1:Book)
+            WHERE NOT (m)-[:BORROWED]->(rec1)
+            WITH m, b, rec1, COUNT(g) AS genreScore
+
+            OPTIONAL MATCH (b)-[s:SIMILAR_TO]->(rec2:Book)
+            WHERE NOT (m)-[:BORROWED]->(rec2)
+            WITH m, b, rec1, genreScore, rec2, COUNT(s) AS similarityScore
+
+            OPTIONAL MATCH (b)-[:WRITTEN_BY]->(a:Author)<-[:WRITTEN_BY]-(rec3:Book)
+            WHERE NOT (m)-[:BORROWED]->(rec3)
+            WITH rec1, rec2, rec3, genreScore, similarityScore,
+            COUNT(a) AS authorScore
+
+            WITH coalesce(rec1, rec2, rec3) AS rec, genreScore, similarityScore, authorScore
+            WHERE rec IS NOT NULL
+            RETURN rec,(genreScore * 2 + similarityScore * 3 + authorScore * 1) AS totalScore
+            ORDER BY totalScore DESC
+            """)
+    List<Book> recommendCombined(Long memberId);
 }

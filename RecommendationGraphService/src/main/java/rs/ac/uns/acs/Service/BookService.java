@@ -27,4 +27,11 @@ public class BookService {
     public List<Book> recommendBySimilarity(Long memberId){
         return bookRepository.recommendBySimilarity(memberId);
     }
+
+    public List<Book> recommendByAuthor(Long memberId){
+        return bookRepository.recommendByAuthor(memberId);
+    }
+    public List<Book> recommendCombined(Long memberId){
+        return bookRepository.recommendCombined(memberId);
+    }
 }

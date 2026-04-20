@@ -33,4 +33,12 @@ public class BookController {
     public ResponseEntity<List<Book>> recommendBySimilarity(@RequestParam Long memberId) {
         return ResponseEntity.ok(bookService.recommendBySimilarity(memberId));
     }
+    @GetMapping("/recommend/author")
+    public ResponseEntity<List<Book>> recommendAuthor(@RequestParam Long memberId){
+        return ResponseEntity.ok(bookService.recommendByAuthor(memberId));
+    }
+    @GetMapping("/recommend/combined")
+    public ResponseEntity<List<Book>> recommendCombined(@RequestParam Long memberId){
+        return  ResponseEntity.ok(bookService.recommendCombined(memberId));
+    }
 }

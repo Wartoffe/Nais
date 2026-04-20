@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import rs.ac.uns.acs.Repository.MemberRepository;
 
 import java.sql.Date;
+import java.time.LocalDate;
 
 @Service
 public class MemberService {
@@ -16,7 +17,7 @@ public class MemberService {
         memberRepository.addOrUpdateRecommendation(memberId, bookId, rating);
     }
 
-    public void updateBorrowDate(Long memberId, String bookId, Date date){
+    public void updateBorrowDate(Long memberId, String bookId, LocalDate date){
         memberRepository.updateBorrowDate(memberId, bookId, date);
     }
 }
