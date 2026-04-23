@@ -6,4 +6,5 @@ import rs.ac.uns.acs.Model.Genre;
 
 @Repository
 public interface GenreRepository extends Neo4jRepository<Genre, Long> {
+    boolean existsByName(String name);
 }

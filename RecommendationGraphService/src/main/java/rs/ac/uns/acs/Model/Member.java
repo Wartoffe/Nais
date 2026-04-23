@@ -18,8 +18,6 @@ public class Member {
     @Relationship(type = "BORROWED")
     private List<Borrow> borrowedBooks;
 
-    @Relationship(type = "RECOMMENDED")
-    private List<Recommendation> recommendations;
 
     public Long getId() {
         return id;
@@ -61,11 +59,4 @@ public class Member {
         this.borrowedBooks = borrowedBooks;
     }
 
-    public List<Recommendation> getRecommendations() {
-        return recommendations;
-    }
-
-    public void setRecommendations(List<Recommendation> recommendations) {
-        this.recommendations = recommendations;
-    }
 }
