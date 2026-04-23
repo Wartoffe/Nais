@@ -28,11 +28,21 @@ public class SimilarityService {
                     + bookId + " and " + targetBookId);
         }
 
-        Similar similar = new Similar();
-        similar.setBook(target);
-        similar.setScore(score);
-        book.getSimilarBooks().add(similar);
-        return bookRepository.save(book);
+        Similar s1 = new Similar();
+        s1.setBook(target);
+        s1.setScore(score);
+
+        Similar s2 = new Similar();
+        s2.setBook(book);
+        s2.setScore(score);
+
+        book.getSimilarBooks().add(s1);
+        target.getSimilarBooks().add(s2);
+
+        bookRepository.save(book);
+        bookRepository.save(target);
+
+        return book;
     }
     public List<Similar> readAll(String bookId) {
         return findBook(bookId).getSimilarBooks();
@@ -48,14 +58,8 @@ public class SimilarityService {
         return bookRepository.save(book);
     }
     public Book remove(String bookId, String targetBookId) {
-        Book book = findBook(bookId);
-        boolean removed = book.getSimilarBooks()
-                .removeIf(s -> s.getBook().getId().equals(targetBookId));
-        if (!removed) {
-            throw new RuntimeException(
-                    "No SIMILAR_TO relationship between " + bookId + " and " + targetBookId);
-        }
-        return bookRepository.save(book);
+        bookRepository.deleteSimilarBothDirections(bookId, targetBookId);
+        return findBook(bookId);
     }
 
 }

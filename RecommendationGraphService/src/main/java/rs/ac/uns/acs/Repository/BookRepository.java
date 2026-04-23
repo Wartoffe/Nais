@@ -69,4 +69,14 @@ public interface BookRepository extends Neo4jRepository<Book, String> {
             ORDER BY totalScore DESC
             """)
     List<Book> recommendCombined(Long memberId);
+
+
+    @Query("""
+            MATCH (b1:Book {id: $bookId})-[r1:SIMILAR_TO]->(b2:Book {id: $targetBookId})
+            DELETE r1
+            WITH b1, b2
+            MATCH (b2)-[r2:SIMILAR_TO]->(b1)
+            DELETE r2
+            """)
+    void deleteSimilarBothDirections(String bookId, String targetBookId);
 }

@@ -50,19 +50,7 @@ public class MemberController {
     public ResponseEntity<Member> update(@PathVariable Long id, @RequestBody Member member) {
         return ResponseEntity.ok(memberService.update(id, member));
     }
-    /*
-    @PostMapping("/{id}/borrow/{bookId}")
-    public ResponseEntity<Member> borrowBook(
-            @PathVariable Long id,
-            @PathVariable String bookId) {
-        return ResponseEntity.ok(memberService.borrowBook(id, bookId));
-    }
-    @DeleteMapping("/{id}/borrow/{bookId}")
-    public ResponseEntity<Member> returnBook(
-            @PathVariable Long id,
-            @PathVariable String bookId) {
-        return ResponseEntity.ok(memberService.returnBook(id, bookId));
-    }*/
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         memberService.delete(id);

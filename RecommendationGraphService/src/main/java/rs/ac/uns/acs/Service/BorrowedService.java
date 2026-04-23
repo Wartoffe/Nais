@@ -58,13 +58,17 @@ public class BorrowedService {
         return memberRepository.save(member);
     }
     public Member returnBook(Long memberId, String bookId) {
-        Member member = findMember(memberId);
-        boolean removed = member.getBorrowedBooks()
-                .removeIf(b -> b.getBook().getId().equals(bookId));
-        if (!removed) {
-            throw new RuntimeException(
-                    "No BORROWED relationship between member " + memberId + " and book " + bookId);
-        }
-        return memberRepository.save(member);
+        // Verify the relationship actually exists first
+        findMember(memberId).getBorrowedBooks().stream()
+                .filter(b -> b.getBook().getId().equals(bookId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException(
+                        "No BORROWED relationship between member " + memberId + " and book " + bookId));
+
+        // Use explicit Cypher DELETE instead of collection manipulation —
+        // @RelationshipProperties entities are NOT removed by save() alone
+        memberRepository.deleteBorrowRelationship(memberId, bookId);
+
+        return findMember(memberId);
     }
 }

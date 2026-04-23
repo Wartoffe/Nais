@@ -1,5 +1,6 @@
 package rs.ac.uns.acs.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
@@ -18,8 +19,8 @@ public class Book {
     @Relationship(type = "BELONGS_TO")
     private Genre genre;
 
+    @JsonIgnore
     @Relationship(type= "SIMILAR_TO")
-    @JsonIgnoreProperties({"similarBooks", "author", "genre"})
     private List<Similar> similarBooks;
     @Relationship(type = "WRITTEN_BY")
     private Author author;
