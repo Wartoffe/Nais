@@ -57,8 +57,9 @@ public class BookController {
         return ResponseEntity.ok(bookService.assignAuthor(id, authorId));
     }
     @PutMapping("/{id}/genre/{genreId}")
-    public ResponseEntity<Book> assignGenre(@PathVariable String id, @PathVariable Long genreId) {
-        return ResponseEntity.ok(bookService.assignGenre(id, genreId));
+    public ResponseEntity<Void> assignGenre(@PathVariable String id, @PathVariable Long genreId) {
+        bookService.addGenreToBook(id, genreId);
+        return ResponseEntity.ok().build();
     }
     @PostMapping("/{id}/similar")
     public ResponseEntity<Book> addSimilarBook(

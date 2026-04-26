@@ -19,15 +19,7 @@ public class MemberController {
     public MemberController(MemberService service){
         this.memberService=service;
     }
-    @PostMapping("/recommend")
-    public ResponseEntity addRecommendation(
-            @RequestParam Long memberId,
-            @RequestParam String bookId,
-            @RequestParam int rating) {
 
-        memberService.addReccomendation(memberId, bookId, rating);
-        return ResponseEntity.ok().build();
-    }
     @PutMapping("/borrow")
     public ResponseEntity updateBorrow(
             @RequestParam Long memberId,

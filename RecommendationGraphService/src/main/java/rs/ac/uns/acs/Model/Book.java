@@ -16,8 +16,8 @@ public class Book {
 
     private String title;
 
-    @Relationship(type = "BELONGS_TO")
-    private Genre genre;
+    @Relationship(type = "BELONGS_TO", direction = Relationship.Direction.OUTGOING)
+    private List<Genre> genre;
 
     @JsonIgnore
     @Relationship(type= "SIMILAR_TO")
@@ -41,11 +41,11 @@ public class Book {
         this.title = title;
     }
 
-    public Genre getGenre() {
+    public List<Genre> getGenre() {
         return genre;
     }
 
-    public void setGenre(Genre genre) {
+    public void setGenre(List<Genre> genre) {
         this.genre = genre;
     }
 

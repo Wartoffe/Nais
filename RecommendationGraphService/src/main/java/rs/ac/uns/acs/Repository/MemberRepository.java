@@ -11,14 +11,6 @@ import java.util.Date;
 
 @Repository
 public interface MemberRepository extends Neo4jRepository<Member, Long> {
-    @Query("""
-            MATCH (m:Member {id: $memberId})
-            MATCH (b:Book {id: $bookId})
-            MERGE (m)-[r:RECOMMENDED]->(b)
-            ON CREATE SET r.rating = $rating
-            ON MATCH SET r.rating = $rating
-            """)
-    void addOrUpdateRecommendation(Long memberId, String bookId, int rating);
 
     @Query("""
             MATCH (m:Member {id: $memberId})-[r:BORROWED]->(b:Book {id: $bookId})

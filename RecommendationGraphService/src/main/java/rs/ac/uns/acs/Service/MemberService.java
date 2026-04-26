@@ -19,9 +19,6 @@ public class MemberService {
         this.memberRepository=memberRepository;
         this.bookRepository=bookRepository;
     }
-    public void addReccomendation(Long memberId, String bookId, int rating){
-        memberRepository.addOrUpdateRecommendation(memberId, bookId, rating);
-    }
 
     public void updateBorrowDate(Long memberId, String bookId, LocalDate date){
         memberRepository.updateBorrowDate(memberId, bookId, date);

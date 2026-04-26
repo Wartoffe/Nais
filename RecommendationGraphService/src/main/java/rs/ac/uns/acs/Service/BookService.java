@@ -1,5 +1,6 @@
 package rs.ac.uns.acs.Service;
 
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import rs.ac.uns.acs.Model.Author;
 import rs.ac.uns.acs.Model.Book;
@@ -9,6 +10,7 @@ import rs.ac.uns.acs.Repository.AuthorRepository;
 import rs.ac.uns.acs.Repository.BookRepository;
 import rs.ac.uns.acs.Repository.GenreRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,7 +24,7 @@ public class BookService {
         this.authorRepository=authorRepository;
         this.genreRepository=genreRepository;
     }
-
+    
     public void addGenreToBook(String bookId, Long genreId) {
         bookRepository.addGenreToBook(bookId, genreId);
     }
@@ -61,7 +63,7 @@ public class BookService {
     public Book update(String id, Book updated) {
         Book existing = findById(id);
         existing.setTitle(updated.getTitle());
-        if (updated.getGenre() != null) {
+        if (updated.getGenre() != null && !updated.getGenre().isEmpty()) {
             existing.setGenre(updated.getGenre());
         }
         if (updated.getAuthor() != null) {
@@ -85,11 +87,15 @@ public class BookService {
         Book book = findById(bookId);
         Genre genre = genreRepository.findById(genreId)
                 .orElseThrow(() -> new RuntimeException("Genre not found with id: " + genreId));
-        book.setGenre(genre);
+        if (book.getGenre() == null) {
+            book.setGenre(new ArrayList<>());
+        }
+
+        boolean exists = book.getGenre().stream()
+                .anyMatch(g -> g.getId().equals(genreId));
         return bookRepository.save(book);
     }
 
-    // Add a similar book relationship
     public Book addSimilarBook(String bookId, String similarBookId, double score) {
         Book book = findById(bookId);
         Book similarBook = findById(similarBookId);

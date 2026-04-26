@@ -65,7 +65,9 @@ public interface BookRepository extends Neo4jRepository<Book, String> {
 
             WITH coalesce(rec1, rec2, rec3) AS rec, genreScore, similarityScore, authorScore
             WHERE rec IS NOT NULL
-            RETURN rec,(genreScore * 2 + similarityScore * 3 + authorScore * 1) AS totalScore
+                                    
+            WITH rec,SUM(genreScore) AS genreScore,SUM(similarityScore) AS similarityScore,SUM(authorScore) AS authorScore    
+            RETURN rec, (genreScore * 2 + similarityScore * 3 + authorScore * 1) AS totalScore
             ORDER BY totalScore DESC
             """)
     List<Book> recommendCombined(Long memberId);
