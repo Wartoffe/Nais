@@ -4,6 +4,7 @@ import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Node
@@ -17,7 +18,7 @@ public class Member {
     private long age;
     @Relationship(type = "BORROWED")
     private List<Borrow> borrowedBooks;
-
+    private List<String> bookHistory= new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -59,4 +60,11 @@ public class Member {
         this.borrowedBooks = borrowedBooks;
     }
 
+    public List<String> getBookHistory() {
+        return bookHistory;
+    }
+
+    public void setBookHistory(List<String> bookHistory) {
+        this.bookHistory = bookHistory;
+    }
 }

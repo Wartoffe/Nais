@@ -18,11 +18,11 @@ public interface BookRepository extends Neo4jRepository<Book, String> {
 
     //1.
     @Query("""
-            MATCH (m:Member {id: $memberId})-[:BORROWED]-> (b:Book)
-            MATCH (b)-[:BELONGS_TO]->(g:Genre)<- [:BELONGS_TO]-(rec:Book)
-            WHERE NOT (m)-[:BORROWED]->(rec)
+            MATCH (m:Member {id: $memberId})
+            MATCH (b:Book) WHERE b.id IN m.bookHistory
+            MATCH (b)-[:BELONGS_TO]->(g:Genre)<-[:BELONGS_TO]-(rec:Book)
+            WHERE NOT rec.id IN m.bookHistory
             WITH rec, COUNT(g) AS score
-            WHERE score >0
             RETURN rec
             ORDER BY score DESC
             """)
@@ -30,46 +30,47 @@ public interface BookRepository extends Neo4jRepository<Book, String> {
 
     //2
     @Query("""
-            MATCH (m:Member {id: $memberId})-[:BORROWED]->(b:Book)
+            MATCH (m:Member {id: $memberId})
+            MATCH (b:Book) WHERE b.id IN m.bookHistory
             MATCH (b)-[s:SIMILAR_TO]->(rec:Book)
-            WHERE NOT (m)-[:BORROWED]->(rec)
+            WHERE NOT rec.id IN m.bookHistory
             WITH rec, COUNT(s) AS similarityScore
-            WHERE similarityScore > 0
             RETURN rec
             ORDER BY similarityScore DESC
             """)
     List<Book> recommendBySimilarity(Long memberId);
     @Query("""
-            MATCH (m:Member {id: $memberId})-[:BORROWED]->(b:Book)
+            MATCH (m:Member {id: $memberId})
+            MATCH (b:Book) WHERE b.id IN m.bookHistory
             MATCH (b)-[:WRITTEN_BY]->(a:Author)<-[:WRITTEN_BY]-(rec:Book)
-            WHERE NOT (m)-[:BORROWED]->(rec)
+            WHERE NOT rec.id IN m.bookHistory
             RETURN rec
             """)
     List<Book> recommendByAuthor(Long memberId);
 
     @Query("""
-            MATCH (m:Member {id: $memberId})-[:BORROWED]->(b:Book)
+            MATCH (m:Member {id: $memberId})
+            MATCH (b:Book) WHERE b.id IN m.bookHistory
 
             OPTIONAL MATCH (b)-[:BELONGS_TO]->(g:Genre)<-[:BELONGS_TO]-(rec1:Book)
-            WHERE NOT (m)-[:BORROWED]->(rec1)
+            WHERE NOT rec1.id IN m.bookHistory
             WITH m, b, rec1, COUNT(g) AS genreScore
 
             OPTIONAL MATCH (b)-[s:SIMILAR_TO]->(rec2:Book)
-            WHERE NOT (m)-[:BORROWED]->(rec2)
+            WHERE NOT rec2.id IN m.bookHistory
             WITH m, b, rec1, genreScore, rec2, COUNT(s) AS similarityScore
 
             OPTIONAL MATCH (b)-[:WRITTEN_BY]->(a:Author)<-[:WRITTEN_BY]-(rec3:Book)
-            WHERE NOT (m)-[:BORROWED]->(rec3)
-            WITH rec1, rec2, rec3, genreScore, similarityScore,
-            COUNT(a) AS authorScore
+            WHERE NOT rec3.id IN m.bookHistory
+            WITH rec1, rec2, rec3, genreScore, similarityScore, COUNT(a) AS authorScore
 
             WITH coalesce(rec1, rec2, rec3) AS rec, genreScore, similarityScore, authorScore
             WHERE rec IS NOT NULL
-                                    
-            WITH rec,SUM(genreScore) AS genreScore,SUM(similarityScore) AS similarityScore,SUM(authorScore) AS authorScore    
+
+            WITH rec, SUM(genreScore) AS genreScore, SUM(similarityScore) AS similarityScore, SUM(authorScore) AS authorScore
             RETURN rec, (genreScore * 2 + similarityScore * 3 + authorScore * 1) AS totalScore
-            ORDER BY totalScore DESC
-            """)
+            sORDER BY totalScore DESC
+        """)
     List<Book> recommendCombined(Long memberId);
 
 

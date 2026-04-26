@@ -40,23 +40,7 @@ public class MemberService {
         existing.setAge(updated.getAge());
         return memberRepository.save(existing);
     }
-    public Member borrowBook(Long memberId, String bookId) {
-        Member member = findById(memberId);
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Book not found with id: " + bookId));
 
-        Borrow borrow = new Borrow();
-        borrow.setBook(book);
-        borrow.setDate(LocalDate.now());
-
-        member.getBorrowedBooks().add(borrow);
-        return memberRepository.save(member);
-    }
-    public Member returnBook(Long memberId, String bookId) {
-        Member member = findById(memberId);
-        member.getBorrowedBooks().removeIf(b -> b.getBook().getId().equals(bookId));
-        return memberRepository.save(member);
-    }
     public void delete(Long id) {
         Member member = findById(id);
         memberRepository.delete(member);
