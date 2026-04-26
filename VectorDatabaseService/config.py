@@ -40,23 +40,38 @@ MAX_IMAGE_SIZE_PX      = 1024
 OLLAMA_URL   = os.getenv("OLLAMA_URL",   "http://ollama:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
 
-# Library domain settings (books + book reviews)
-BOOKS_COLLECTION          = "books"
-BOOK_REVIEWS_COLLECTION   = "book_reviews"
+# Books collection settings (dense text vector + dense cover vector)
+BOOKS_COLLECTION                  = "books"
+BOOKS_DESCRIPTION_EMBEDDING_MODEL = BOOKS_COVER_EMBEDDING_MODEL = "clip-ViT-B-32"
+BOOKS_DESCRIPTION_EMBEDDING_DIM   = BOOKS_COVER_EMBEDDING_DIM   = 512
+BOOKS_NLIST                       = 64
+BOOKS_NPROBE                      = 16
+BOOKS_TOP_K                       = 10
 
-BOOKS_EMBEDDING_MODEL     = "sentence-transformers/all-MiniLM-L6-v2"
-BOOKS_EMBEDDING_DIM       = 384
-BOOKS_NLIST               = 64
-BOOKS_NPROBE              = 16
-BOOKS_DEFAULT_TOP_K       = 5
+# Reviews collection settings (dense vector + sparse BM25 vector)
+REVIEWS_COLLECTION                = "reviews"
+REVIEWS_EMBEDDING_MODEL           = "sentence-transformers/all-MiniLM-L6-v2"
+REVIEWS_EMBEDDING_DIM             = 384
+REVIEWS_BM25_ANALYZER_LANGUAGE    = "english"
+REVIEWS_NLIST                     = 64
+REVIEWS_NPROBE                    = 16
+REVIEWS_TOP_K                     = 10
 
-REVIEWS_EMBEDDING_MODEL   = "sentence-transformers/all-MiniLM-L6-v2"
-REVIEWS_EMBEDDING_DIM     = 384
-REVIEWS_NLIST             = 64
-REVIEWS_NPROBE            = 16
-REVIEWS_DEFAULT_TOP_K     = 5
+# Local data file paths used by preparation scripts and ingest modules
+DATA_DIR                          = os.getenv("DATA_DIR", "data")
+BOOKS_PARQUET_PATH                = os.getenv("BOOKS_PARQUET_PATH", os.path.join(DATA_DIR, "books.parquet"))
+REVIEWS_PARQUET_PATH              = os.getenv("REVIEWS_PARQUET_PATH", os.path.join(DATA_DIR, "reviews.parquet"))
 
-# Minimum seed targets for assignment requirements
-BOOKS_MIN_ROWS            = 200
-REVIEWS_MIN_ROWS          = 200
-REVIEWS_PER_BOOK          = 2
+# Temporary aliases to keep legacy imports stable until Phase 9 cleanup
+BOOKS_EMBEDDING_MODEL             = BOOKS_DESCRIPTION_EMBEDDING_MODEL
+BOOKS_EMBEDDING_DIM               = BOOKS_DESCRIPTION_EMBEDDING_DIM
+BOOKS_DEFAULT_TOP_K               = BOOKS_TOP_K
+REVIEWS_DEFAULT_TOP_K             = REVIEWS_TOP_K
+BOOK_REVIEWS_COLLECTION           = REVIEWS_COLLECTION
+
+# Legacy SciQ aliases kept temporarily until full domain cleanup in Phase 9
+SCIQ_COLLECTION                   = "sciq"
+SCIQ_EMBEDDING_MODEL              = BOOKS_DESCRIPTION_EMBEDDING_MODEL
+SCIQ_EMBEDDING_DIM                = BOOKS_DESCRIPTION_EMBEDDING_DIM
+SCIQ_NLIST                        = BOOKS_NLIST
+SCIQ_NPROBE                       = BOOKS_NPROBE

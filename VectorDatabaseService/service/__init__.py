@@ -1,2 +1,0 @@
-from service.i_books_service import IBooksService
-from service.i_reviews_service import IReviewsService

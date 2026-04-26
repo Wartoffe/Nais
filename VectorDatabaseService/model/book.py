@@ -1,45 +1,96 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class BookBase(BaseModel):
-    goodreads_id: str | None = Field(default=None, min_length=1, max_length=32)
+    """Validated scalar payload shared by all book DTOs."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    goodreads_id: int = Field(..., ge=1)
     isbn: str = Field(..., min_length=1, max_length=32)
     title: str = Field(..., min_length=1, max_length=512)
     author: str = Field(..., min_length=1, max_length=256)
-    genre: str = Field(default="General", min_length=1, max_length=128)
-    publisher: str = Field(..., min_length=1, max_length=256)
-    year: int = Field(default=2000, ge=0, le=3000)
-    language: str = Field(..., min_length=1, max_length=32)
-    description: str = Field("", max_length=4000)
-    coverImg: str | None = Field(default=None, min_length=1, max_length=2048)
-    pages: int | None = Field(default=None, ge=0, le=100_000)
+    description: str = Field(..., min_length=1, max_length=6000)
+    language: str = Field(default="en", min_length=2, max_length=32)
+    publisher: str = Field(default="", max_length=256)
+    pages: int = Field(default=0, ge=0, le=100_000)
+    cover_img: str | None = Field(default=None, max_length=2048, alias="coverImg")
     has_image: bool = Field(default=False)
-    keywords: list[str] = Field(default_factory=list)
 
+    @field_validator("isbn", "title", "author", "description", "language")
+    @classmethod
+    def _strip_required(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Field cannot be empty")
+        return cleaned
+
+    @field_validator("publisher")
+    @classmethod
+    def _strip_publisher(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("cover_img")
+    @classmethod
+    def _normalize_cover(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
 
 class BookCreate(BookBase):
-    pass
+    """Request model for inserting a new book."""
 
 
 class BookUpdate(BaseModel):
-    goodreads_id: str | None = Field(default=None, min_length=1, max_length=32)
+    """Request model for partial book updates."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    goodreads_id: int | None = Field(default=None, ge=1)
     isbn: str | None = Field(default=None, min_length=1, max_length=32)
     title: str | None = Field(default=None, min_length=1, max_length=512)
     author: str | None = Field(default=None, min_length=1, max_length=256)
-    genre: str | None = Field(default=None, min_length=1, max_length=128)
-    publisher: str | None = Field(default=None, min_length=1, max_length=256)
-    year: int | None = Field(default=None, ge=0, le=3000)
-    language: str | None = Field(default=None, min_length=1, max_length=32)
-    description: str | None = Field(default=None, max_length=4000)
-    coverImg: str | None = Field(default=None, min_length=1, max_length=2048)
+    description: str | None = Field(default=None, min_length=1, max_length=6000)
+    language: str | None = Field(default=None, min_length=2, max_length=32)
+    publisher: str | None = Field(default=None, max_length=256)
     pages: int | None = Field(default=None, ge=0, le=100_000)
-    has_image: bool | None = None
-    keywords: list[str] | None = None
+    cover_img: str | None = Field(default=None, max_length=2048, alias="coverImg")
+    has_image: bool | None = Field(default=None)
 
+    @field_validator("isbn", "title", "author", "description", "language")
+    @classmethod
+    def _strip_optional_required(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Field cannot be empty")
+        return cleaned
+
+    @field_validator("publisher")
+    @classmethod
+    def _strip_optional_publisher(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip()
+
+    @field_validator("cover_img")
+    @classmethod
+    def _normalize_optional_cover(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
 
 class Book(BookBase):
+    """Book entity as stored in Milvus."""
+
     id: int
 
 
 class BookSearchResult(Book):
+    """Book search payload enriched with similarity scores."""
+
     score: float
+    fused_score: float | None = None
