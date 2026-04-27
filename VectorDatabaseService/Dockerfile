@@ -30,11 +30,11 @@ RUN pip install --no-cache-dir "marshmallow==3.20.2"
 # Pre-bake CLIP model weights into the image layer (~350 MB, cached across rebuilds)
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('clip-ViT-B-32')"
 
-# Pre-bake MiniLM model weights for the SciQ RAG example (~90 MB)
+# Pre-bake MiniLM model weights for reviews semantic/hybrid retrieval (~90 MB)
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
 
 # Copies all application code folders and logic into the working directory
-COPY config.py app.py lab_app.py ./
+COPY config.py app.py ./
 COPY schema/     ./schema/
 COPY services/   ./services/
 COPY model/      ./model/

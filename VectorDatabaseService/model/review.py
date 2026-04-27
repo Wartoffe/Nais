@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
 class ReviewBase(BaseModel):
@@ -6,8 +6,10 @@ class ReviewBase(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    review_id: str = Field(..., min_length=1, max_length=64)
-    book_id: int = Field(..., ge=1)
+    review_id: str = Field(
+        ..., min_length=1, max_length=64, validation_alias=AliasChoices("review_id", "reviewId")
+    )
+    book_id: int = Field(..., ge=1, validation_alias=AliasChoices("book_id", "bookId"))
     isbn: str = Field(..., min_length=1, max_length=32)
     language: str = Field(default="en", min_length=2, max_length=32)
     rating: float = Field(..., ge=1.0, le=5.0)
@@ -33,8 +35,13 @@ class ReviewUpdate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    review_id: str | None = Field(default=None, min_length=1, max_length=64)
-    book_id: int | None = Field(default=None, ge=1)
+    review_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=64,
+        validation_alias=AliasChoices("review_id", "reviewId"),
+    )
+    book_id: int | None = Field(default=None, ge=1, validation_alias=AliasChoices("book_id", "bookId"))
     isbn: str | None = Field(default=None, min_length=1, max_length=32)
     language: str | None = Field(default=None, min_length=2, max_length=32)
     rating: float | None = Field(default=None, ge=1.0, le=5.0)

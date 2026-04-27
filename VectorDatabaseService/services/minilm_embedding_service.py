@@ -3,18 +3,18 @@ import logging
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from config import BOOKS_DESCRIPTION_EMBEDDING_DIM, BOOKS_DESCRIPTION_EMBEDDING_MODEL
+from config import REVIEWS_EMBEDDING_DIM, REVIEWS_EMBEDDING_MODEL
 
 logger = logging.getLogger(__name__)
 
 
 class MiniLMEmbeddingService:
     """Service for generating text embeddings using the MiniLM model (optimized for RAG)."""
-    def __init__(self, model_name: str = BOOKS_DESCRIPTION_EMBEDDING_MODEL):
+    def __init__(self, model_name: str = REVIEWS_EMBEDDING_MODEL):
         # Loads the small but efficient sentence-transformer model
         logger.info("Loading MiniLM model '%s' ...", model_name)
         self._model = SentenceTransformer(model_name)
-        logger.info("MiniLM model loaded (dim=%d).", BOOKS_DESCRIPTION_EMBEDDING_DIM)
+        logger.info("MiniLM model loaded (dim=%d).", REVIEWS_EMBEDDING_DIM)
 
     def encode(self, texts: list[str]) -> list[list[float]]:
         """Converts a batch of text into normalized vector representations."""
@@ -40,7 +40,7 @@ class MiniLMEmbeddingService:
     @staticmethod
     def zero_vector() -> list[float]:
         """Returns a vector of zeros matching the model's output dimension."""
-        return [0.0] * BOOKS_DESCRIPTION_EMBEDDING_DIM
+        return [0.0] * REVIEWS_EMBEDDING_DIM
 
 
 minilm_service = MiniLMEmbeddingService()

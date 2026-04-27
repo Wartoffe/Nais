@@ -3,8 +3,8 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from service.impl.fashion_chat_service import fashion_chat_service
-from service.impl.sciq_chat_service import sciq_chat_service
+from service.impl.books_chat_service import books_chat_service
+from service.impl.reviews_chat_service import reviews_chat_service
 from services.llm_service import llm_service
 from config import OLLAMA_MODEL
 
@@ -23,40 +23,38 @@ def chat_health():
 
 
 @router.post(
-    "/api/v1/fashion-lab/chat",
-    summary="Outfit recommendation — retrieves catalog items from Milvus, then asks LLM to compose an outfit",
+    "/api/v1/books/chat",
+    summary="Books assistant — retrieves top-k books and asks Ollama to answer with book context",
     description=(
-        "1. Encodes the message with CLIP → ANN search on fashion_lab (top-10).\n"
-        "2. Builds a prompt with the retrieved items as context.\n"
-        "3. Sends to Ollama (`qwen2.5:1.5b`) and returns the recommendation.\n\n"
-        "Example: `{\"message\": \"What should I combine with a black t-shirt for a casual look?\"}`"
+        "1. Encodes the message with the books text encoder (CLIP) and runs ANN search on description_embedding.\n"
+        "2. Builds a prompt with title, author, and description from top-k books.\n"
+        "3. Sends to Ollama and returns the answer/recommendation."
     ),
 )
-def fashion_chat(request: ChatRequest):
+def books_chat(request: ChatRequest):
     try:
-        return fashion_chat_service.chat(request.message)
+        return books_chat_service.chat(request.message)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
-        logger.error("Fashion chat error: %s", exc)
+        logger.error("Books chat error: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
 
 
 @router.post(
-    "/api/v1/sciq/chat",
-    summary="Science Q&A — retrieves relevant passages from sciq_passages, then asks LLM to answer",
+    "/api/v1/reviews/chat",
+    summary="Reviews assistant — hybrid retrieval (dense + BM25) then Ollama answer",
     description=(
-        "1. Encodes the question with MiniLM → ANN search on sciq_passages (top-4).\n"
-        "2. Builds a RAG prompt with the retrieved passages as context.\n"
-        "3. Sends to Ollama (`qwen2.5:1.5b`) and returns the answer.\n\n"
-        "Example: `{\"message\": \"Why do objects fall at the same speed regardless of mass?\"}`"
+        "1. Runs hybrid retrieval on reviews (review_embedding + sparse_bm25).\n"
+        "2. Builds a prompt with top-k review excerpts as context.\n"
+        "3. Sends to Ollama and returns the answer."
     ),
 )
-def sciq_chat(request: ChatRequest):
+def reviews_chat(request: ChatRequest):
     try:
-        return sciq_chat_service.chat(request.message)
+        return reviews_chat_service.chat(request.message)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
-        logger.error("SciQ chat error: %s", exc)
+        logger.error("Reviews chat error: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))

@@ -13,7 +13,7 @@ services:
       - ETCD_QUOTA_BACKEND_BYTES=4294967296
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
-      - ./VectorDatabaseService/volumes/etcd:/etcd
+      - ./volumes/etcd:/etcd
     command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
@@ -31,7 +31,7 @@ services:
       - "9001:9001"
       - "9000:9000"
     volumes:
-      - ./VectorDatabaseService/volumes/minio:/minio_data
+      - ./volumes/minio:/minio_data
     command: minio server /minio_data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -52,7 +52,7 @@ services:
       MINIO_ADDRESS: minio:9000
       MQ_TYPE: woodpecker
     volumes:
-      - ./VectorDatabaseService/volumes/milvus:/var/lib/milvus
+      - ./volumes/milvus:/var/lib/milvus
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
@@ -93,7 +93,7 @@ services:
         condition: service_healthy
     healthcheck:
       # Mirrors the /health endpoint pattern from health_controller.py
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/books/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 20s
       timeout: 10s
       retries: 5
@@ -126,6 +126,21 @@ services:
     depends_on:
       standalone:
         condition: service_healthy
+  
+  # ── Streamlit ───────────────────────────────────────────────────
+  
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      API_URL: "http://vector-database-service:8000"
+    depends_on:
+      - vector-database-service
+    restart: on-failure
 
 # ── Named volumes ─────────────────────────────────────────────────────────────
 

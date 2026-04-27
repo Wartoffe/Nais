@@ -1,3 +1,17 @@
+"""
+Multimodal ingestion of books into Milvus.
+
+Modalities:
+Dataset: https://zenodo.org/records/4265096 (smaller version avilable as parquet file)
+Embedding model: CLIP ViT-B/32 (clip-ViT-B-32 via sentence-transformers)
+
+- TEXT:  description       ->  CLIP text encoder  ->  description_embedding
+- IMAGE: image_bytes (PIL) ->  CLIP image encoder ->  cover_embedding
+
+Both vectors reside in the same 512-dimensional CLIP space, 
+enabling cross-modal retrieval.
+"""
+
 import argparse
 import base64
 import logging
@@ -5,14 +19,33 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import BATCH_SIZE, BOOKS_COLLECTION, BOOKS_MIN_ROWS, BOOKS_PARQUET_PATH
+from config import BATCH_SIZE, BOOKS_COLLECTION, BOOKS_PARQUET_PATH
 from schema.books_schema import books_index_params, books_schema
 from services.embedding_service import embedding_service
 from services.milvus_service import milvus_service
-from services.minilm_embedding_service import minilm_service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(message)s")
 logger = logging.getLogger(__name__)
+
+_REQUIRED_FIELDS = {"goodreads_id", "description_embedding", "cover_embedding", "has_image"}
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_str(value, max_len: int, default: str = "") -> str:
+    if value is None:
+        return default
+    try:
+        if pd.isna(value):
+            return default
+    except Exception:
+        pass
+    return str(value).strip()[:max_len]
 
 
 def _normalize_bytes_to_b64(value) -> str:
@@ -21,16 +54,32 @@ def _normalize_bytes_to_b64(value) -> str:
     if isinstance(value, (bytes, bytearray)):
         return base64.b64encode(bytes(value)).decode("utf-8")
     if isinstance(value, str):
-        stripped = value.strip()
-        return stripped
+        return value.strip()
     return ""
+
+
+def _has_expected_schema() -> bool:
+    try:
+        info = milvus_service.client.describe_collection(BOOKS_COLLECTION)
+        field_names = {field.get("name") for field in info.get("fields", [])}
+        return _REQUIRED_FIELDS.issubset(field_names)
+    except Exception:
+        return False
 
 
 def _prepare_collection(reset: bool) -> None:
     client = milvus_service.client
-    if client.has_collection(BOOKS_COLLECTION) and reset:
-        client.drop_collection(BOOKS_COLLECTION)
-        logger.info("Dropped collection '%s' (--reset).", BOOKS_COLLECTION)
+
+    if client.has_collection(BOOKS_COLLECTION):
+        if reset:
+            client.drop_collection(BOOKS_COLLECTION)
+            logger.info("Dropped collection '%s' (--reset).", BOOKS_COLLECTION)
+        elif not _has_expected_schema():
+            client.drop_collection(BOOKS_COLLECTION)
+            logger.info(
+                "Dropped '%s' - outdated schema detected, recreating.",
+                BOOKS_COLLECTION,
+            )
 
     if not client.has_collection(BOOKS_COLLECTION):
         client.create_collection(
@@ -45,41 +94,72 @@ def _prepare_collection(reset: bool) -> None:
 
 
 def _already_ingested() -> bool:
-    stats = milvus_service.client.get_collection_stats(BOOKS_COLLECTION)
+    stats = milvus_service.collection_stats(BOOKS_COLLECTION)
     count = int(stats.get("row_count", 0))
-    if count >= BOOKS_MIN_ROWS:
-        logger.info("Collection '%s' already has %d rows - skipping.", BOOKS_COLLECTION, count)
+    if count > 0:
+        logger.info(
+            "Collection '%s' already has %d rows - skipping. Use --reset to re-ingest.",
+            BOOKS_COLLECTION,
+            count,
+        )
         return True
     return False
 
 
-def _cover_embedding(row: dict) -> tuple[list[float], bool]:
+def _load_cover_image(row: dict):
     image_bytes = row.get("image_bytes")
-    cover_url = (row.get("coverImg") or "").strip()
-
     if image_bytes:
         try:
             raw = base64.b64decode(image_bytes)
-            return embedding_service.encode_from_bytes(raw), True
+            return embedding_service.image_from_bytes(raw)
         except Exception:
             pass
 
+    cover_url = row.get("coverImg") or ""
     if cover_url:
         try:
-            return embedding_service.encode_from_url(cover_url), True
+            return embedding_service.image_from_url(cover_url)
         except Exception:
             pass
 
-    return embedding_service.zero_vector(), False
+    return None
 
 
 def _flush(batch: list[dict], total: int) -> int:
-    texts = [r["description"] for r in batch]
-    text_embeddings = minilm_service.encode(texts)
+    descriptions = [row["description"] for row in batch]
+    description_embeddings = embedding_service.encode_text(descriptions)
+
+    valid_img_indices: list[int] = []
+    valid_images: list = []
+    for idx, row in enumerate(batch):
+        image = _load_cover_image(row)
+        if image is not None:
+            valid_img_indices.append(idx)
+            valid_images.append(image)
+
+    if valid_images:
+        try:
+            valid_cover_embeddings = embedding_service.encode_images(valid_images)
+        except Exception as exc:
+            logger.warning("Cover image encoding failed (%s) - using zero vectors.", exc)
+            valid_cover_embeddings = [embedding_service.zero_vector()] * len(valid_images)
+    else:
+        valid_cover_embeddings = []
+
+    zero = embedding_service.zero_vector()
+    cover_embeddings = [zero] * len(batch)
+    has_image_list = [False] * len(batch)
+    for pos, row_idx in enumerate(valid_img_indices):
+        cover_embeddings[row_idx] = valid_cover_embeddings[pos]
+        has_image_list[row_idx] = True
 
     records = []
-    for row, desc_vec in zip(batch, text_embeddings):
-        cover_vec, has_image = _cover_embedding(row)
+    for row, desc_vec, cover_vec, has_image in zip(
+        batch,
+        description_embeddings,
+        cover_embeddings,
+        has_image_list,
+    ):
         records.append(
             {
                 "goodreads_id": row["goodreads_id"],
@@ -91,7 +171,7 @@ def _flush(batch: list[dict], total: int) -> int:
                 "coverImg": row["coverImg"],
                 "publisher": row["publisher"],
                 "pages": row["pages"],
-                "has_image": bool(row.get("has_image", False) and has_image),
+                "has_image": has_image,
                 "description_embedding": desc_vec,
                 "cover_embedding": cover_vec,
             }
@@ -104,7 +184,7 @@ def _flush(batch: list[dict], total: int) -> int:
     return total
 
 
-def ingest(data_path: str = BOOKS_PARQUET_PATH, reset: bool = False) -> None:
+def ingest(data_path: str = BOOKS_PARQUET_PATH, reset: bool = False, limit: int | None = None) -> None:
     _prepare_collection(reset)
     if _already_ingested():
         return
@@ -115,27 +195,37 @@ def ingest(data_path: str = BOOKS_PARQUET_PATH, reset: bool = False) -> None:
 
     logger.info("Loading books from %s", parquet_path)
     rows = pd.read_parquet(parquet_path).to_dict(orient="records")
+    if limit is not None and limit > 0:
+        rows = rows[:limit]
 
     batch: list[dict] = []
     total = 0
+    skipped = 0
 
-    for i, row in enumerate(rows, start=1):
+    for row in rows:
         record = {
-            "goodreads_id": int(row.get("goodreads_id") or 0),
-            "isbn": str(row.get("isbn") or "")[:32],
-            "title": str(row.get("title") or "")[:512],
-            "author": str(row.get("author") or "")[:256],
-            "description": str(row.get("description") or "")[:6000],
-            "language": str(row.get("language") or "en")[:32],
-            "coverImg": str(row.get("coverImg") or "")[:2048],
-            "publisher": str(row.get("publisher") or "")[:256],
-            "pages": int(row.get("pages") or 0),
-            # image_bytes is only a transient ingest input, never persisted in Milvus
+            "goodreads_id": _safe_str(
+                row.get("goodreads_id") or row.get("book_id") or row.get("bookId"),
+                64,
+            ),
+            "isbn": _safe_str(row.get("isbn"), 32),
+            "title": _safe_str(row.get("title"), 512),
+            "author": _safe_str(row.get("author"), 256),
+            "description": _safe_str(row.get("description"), 6000),
+            "language": _safe_str(row.get("language"), 32, default="en"),
+            "coverImg": _safe_str(row.get("coverImg"), 2048),
+            "publisher": _safe_str(row.get("publisher"), 256),
+            "pages": _safe_int(row.get("pages"), 0),
             "image_bytes": _normalize_bytes_to_b64(row.get("image_bytes")),
-            "has_image": bool(row.get("has_image", False)),
         }
 
-        if not record["isbn"] or not record["title"] or not record["description"]:
+        if (
+            not record["goodreads_id"]
+            or not record["isbn"]
+            or not record["title"]
+            or not record["description"]
+        ):
+            skipped += 1
             continue
 
         batch.append(record)
@@ -146,12 +236,13 @@ def ingest(data_path: str = BOOKS_PARQUET_PATH, reset: bool = False) -> None:
     if batch:
         total = _flush(batch, total)
 
-    logger.info("Books ingest done. Total inserted=%d", total)
+    logger.info("Books ingest done. Total inserted=%d, skipped=%d", total, skipped)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Ingest books into Milvus")
+    parser = argparse.ArgumentParser(description="Ingest books (text + images) into Milvus")
     parser.add_argument("--data", default=BOOKS_PARQUET_PATH, help="Path to books parquet")
     parser.add_argument("--reset", action="store_true", help="Drop and recreate collection")
+    parser.add_argument("--limit", type=int, default=None, help="Optional max number of rows to ingest")
     args = parser.parse_args()
-    ingest(data_path=args.data, reset=args.reset)
+    ingest(data_path=args.data, reset=args.reset, limit=args.limit)

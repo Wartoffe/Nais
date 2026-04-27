@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
 class BookBase(BaseModel):
@@ -6,7 +6,7 @@ class BookBase(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
-    goodreads_id: int = Field(..., ge=1)
+    goodreads_id: int = Field(..., ge=1, validation_alias=AliasChoices("goodreads_id", "goodreadsId"))
     isbn: str = Field(..., min_length=1, max_length=32)
     title: str = Field(..., min_length=1, max_length=512)
     author: str = Field(..., min_length=1, max_length=256)
@@ -47,7 +47,11 @@ class BookUpdate(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
-    goodreads_id: int | None = Field(default=None, ge=1)
+    goodreads_id: int | None = Field(
+        default=None,
+        ge=1,
+        validation_alias=AliasChoices("goodreads_id", "goodreadsId"),
+    )
     isbn: str | None = Field(default=None, min_length=1, max_length=32)
     title: str | None = Field(default=None, min_length=1, max_length=512)
     author: str | None = Field(default=None, min_length=1, max_length=256)

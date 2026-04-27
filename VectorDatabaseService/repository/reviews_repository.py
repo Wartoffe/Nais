@@ -3,7 +3,7 @@ from typing import Generator
 from pymilvus import AnnSearchRequest, RRFRanker
 
 from config import REVIEWS_COLLECTION, REVIEWS_NPROBE
-from schema.reviews_schema import REVIEWS_OUTPUT_FIELDS
+from schema.reviews_schema import REVIEWS_OUTPUT_FIELDS, reviews_index_params, reviews_schema
 from services.milvus_service import milvus_service
 
 
@@ -38,11 +38,31 @@ class ReviewsRepository:
     def batch_delete(self, entity_ids: list[int]) -> dict:
         return self._client.delete(collection_name=self._collection, ids=entity_ids)
 
+    def find_existing_ids(self, entity_ids: list[int]) -> set[int]:
+        if not entity_ids:
+            return set()
+
+        rows = self._client.get(
+            collection_name=self._collection,
+            ids=entity_ids,
+            output_fields=["id"],
+        )
+        return {int(row["id"]) for row in rows}
+
     def find_by_id(self, entity_id: int) -> dict | None:
         rows = self._client.get(
             collection_name=self._collection,
             ids=[entity_id],
             output_fields=["id"] + REVIEWS_OUTPUT_FIELDS,
+        )
+        return rows[0] if rows else None
+
+    def find_by_id_with_vectors(self, entity_id: int) -> dict | None:
+        fields = ["id"] + REVIEWS_OUTPUT_FIELDS + ["review_embedding"]
+        rows = self._client.get(
+            collection_name=self._collection,
+            ids=[entity_id],
+            output_fields=list(dict.fromkeys(fields)),
         )
         return rows[0] if rows else None
 
@@ -182,18 +202,48 @@ class ReviewsRepository:
             limit=top_k,
             output_fields=["id"] + REVIEWS_OUTPUT_FIELDS,
         )
-        return self._parse_hits([raw])[0]
+        parsed = self._parse_hits(raw)
+        return parsed[0] if parsed else []
+
+    # Collection management
+    def get_stats(self) -> dict:
+        return self._client.get_collection_stats(collection_name=self._collection)
+
+    def reset(self) -> None:
+        schema = reviews_schema(self._client)
+        index_params = reviews_index_params(self._client)
+        if self._client.has_collection(self._collection):
+            self._client.drop_collection(self._collection)
+        self._client.create_collection(
+            collection_name=self._collection,
+            schema=schema,
+            index_params=index_params,
+            consistency_level="Strong",
+        )
+        self._client.load_collection(self._collection)
 
     @staticmethod
     def _parse_hits(raw) -> list[list[dict]]:
+        def _parse_hit(hit) -> dict:
+            row = dict(hit.get("entity", {}))
+            row["id"] = hit.get("id")
+            row["score"] = round(hit.get("distance", 0.0), 6)
+            return row
+
         results = []
+        if not raw:
+            return results
+
+        if hasattr(raw[0], "get"):
+            return [[_parse_hit(hit) for hit in raw]]
+
         for hits in raw:
             batch = []
-            for hit in hits:
-                row = dict(hit.get("entity", {}))
-                row["id"] = hit.get("id")
-                row["score"] = round(hit.get("distance", 0.0), 6)
-                batch.append(row)
+            if hasattr(hits, "get"):
+                batch.append(_parse_hit(hits))
+            else:
+                for hit in hits:
+                    batch.append(_parse_hit(hit))
             results.append(batch)
         return results
 

@@ -46,13 +46,24 @@ with tab_books:
     for msg in st.session_state.books_history:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
-            if msg.get("sources"):
+            context_books = msg.get("context_books") or msg.get("sources") or []
+            if context_books:
                 with st.expander("Books retrieved from catalog", expanded=False):
-                    for book in msg["sources"]:
-                        st.markdown(
-                            f"- **{book.get('title')}** by {book.get('author')} "
-                            f"({book.get('genre')}, {book.get('year')}) — ISBN: `{book.get('isbn')}`"
-                        )
+                    for book in context_books:
+                        title = book.get("title", "Unknown title")
+                        author = book.get("author", "Unknown author")
+                        score = book.get("score")
+                        isbn = book.get("isbn")
+
+                        line = f"- **{title}** by {author}"
+                        details = []
+                        if isbn:
+                            details.append(f"ISBN: `{isbn}`")
+                        if score is not None:
+                            details.append(f"score: `{float(score):.4f}`")
+                        if details:
+                            line += " — " + " | ".join(details)
+                        st.markdown(line)
 
     if prompt := st.chat_input(
         "e.g. Looking for a sci-fi novel about space exploration",
@@ -73,29 +84,39 @@ with tab_books:
                     resp.raise_for_status()
                     data = resp.json()
                     response_text = data["response"]
-                    sources = data.get("sources", [])
+                    context_books = data.get("context_books") or data.get("sources", [])
 
                     st.markdown(response_text)
-                    if sources:
+                    if context_books:
                         with st.expander("Books retrieved from catalog", expanded=False):
-                            for book in sources:
-                                st.markdown(
-                                    f"- **{book.get('title')}** by {book.get('author')} "
-                                    f"({book.get('genre')}, {book.get('year')}) — ISBN: `{book.get('isbn')}`"
-                                )
+                            for book in context_books:
+                                title = book.get("title", "Unknown title")
+                                author = book.get("author", "Unknown author")
+                                score = book.get("score")
+                                isbn = book.get("isbn")
+
+                                line = f"- **{title}** by {author}"
+                                details = []
+                                if isbn:
+                                    details.append(f"ISBN: `{isbn}`")
+                                if score is not None:
+                                    details.append(f"score: `{float(score):.4f}`")
+                                if details:
+                                    line += " — " + " | ".join(details)
+                                st.markdown(line)
                 except requests.exceptions.Timeout:
                     response_text = "⏳ Request timed out. The LLM may still be warming up — try again in a moment."
-                    sources = []
+                    context_books = []
                     st.warning(response_text)
                 except Exception as exc:
                     response_text = f"❌ Error: {exc}"
-                    sources = []
+                    context_books = []
                     st.error(response_text)
 
         st.session_state.books_history.append({
-            "role":    "assistant",
-            "content": response_text,
-            "sources": sources,
+            "role":          "assistant",
+            "content":       response_text,
+            "context_books": context_books,
         })
 
     if st.session_state.books_history:
@@ -118,10 +139,21 @@ with tab_reviews:
     for msg in st.session_state.reviews_history:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
-            if msg.get("sources"):
+            context_reviews = msg.get("context_reviews") or msg.get("sources") or []
+            if context_reviews:
                 with st.expander("Retrieved reviews", expanded=False):
-                    for i, src in enumerate(msg["sources"], 1):
-                        st.markdown(f"**Review {i}:** {src}")
+                    for i, src in enumerate(context_reviews, 1):
+                        if isinstance(src, dict):
+                            review_id = src.get("review_id", "n/a")
+                            isbn = src.get("isbn", "n/a")
+                            rating = src.get("rating", "n/a")
+                            score = src.get("score")
+                            score_part = f" | score: `{float(score):.4f}`" if score is not None else ""
+                            st.markdown(
+                                f"**Review {i}:** review_id=`{review_id}` | isbn=`{isbn}` | rating=`{rating}`{score_part}"
+                            )
+                        else:
+                            st.markdown(f"**Review {i}:** {src}")
 
     if prompt := st.chat_input(
         "e.g. What do readers think about dystopian fiction?",
@@ -135,33 +167,43 @@ with tab_reviews:
             with st.spinner("Searching reviews and summarising sentiment…"):
                 try:
                     resp = requests.post(
-                        f"{API_URL}/api/v1/books/reviews/chat",
+                        f"{API_URL}/api/v1/reviews/chat",
                         json={"message": prompt},
                         timeout=120,
                     )
                     resp.raise_for_status()
                     data = resp.json()
                     response_text = data["response"]
-                    sources = data.get("sources", [])
+                    context_reviews = data.get("context_reviews") or data.get("sources", [])
 
                     st.markdown(response_text)
-                    if sources:
+                    if context_reviews:
                         with st.expander("Retrieved reviews", expanded=False):
-                            for i, src in enumerate(sources, 1):
-                                st.markdown(f"**Review {i}:** {src}")
+                            for i, src in enumerate(context_reviews, 1):
+                                if isinstance(src, dict):
+                                    review_id = src.get("review_id", "n/a")
+                                    isbn = src.get("isbn", "n/a")
+                                    rating = src.get("rating", "n/a")
+                                    score = src.get("score")
+                                    score_part = f" | score: `{float(score):.4f}`" if score is not None else ""
+                                    st.markdown(
+                                        f"**Review {i}:** review_id=`{review_id}` | isbn=`{isbn}` | rating=`{rating}`{score_part}"
+                                    )
+                                else:
+                                    st.markdown(f"**Review {i}:** {src}")
                 except requests.exceptions.Timeout:
                     response_text = "⏳ Request timed out. The LLM may still be warming up — try again in a moment."
-                    sources = []
+                    context_reviews = []
                     st.warning(response_text)
                 except Exception as exc:
                     response_text = f"❌ Error: {exc}"
-                    sources = []
+                    context_reviews = []
                     st.error(response_text)
 
         st.session_state.reviews_history.append({
-            "role":    "assistant",
-            "content": response_text,
-            "sources": sources,
+            "role":            "assistant",
+            "content":         response_text,
+            "context_reviews": context_reviews,
         })
 
     if st.session_state.reviews_history:

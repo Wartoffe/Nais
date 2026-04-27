@@ -68,10 +68,3 @@ BOOKS_EMBEDDING_DIM               = BOOKS_DESCRIPTION_EMBEDDING_DIM
 BOOKS_DEFAULT_TOP_K               = BOOKS_TOP_K
 REVIEWS_DEFAULT_TOP_K             = REVIEWS_TOP_K
 BOOK_REVIEWS_COLLECTION           = REVIEWS_COLLECTION
-
-# Legacy SciQ aliases kept temporarily until full domain cleanup in Phase 9
-SCIQ_COLLECTION                   = "sciq"
-SCIQ_EMBEDDING_MODEL              = BOOKS_DESCRIPTION_EMBEDDING_MODEL
-SCIQ_EMBEDDING_DIM                = BOOKS_DESCRIPTION_EMBEDDING_DIM
-SCIQ_NLIST                        = BOOKS_NLIST
-SCIQ_NPROBE                       = BOOKS_NPROBE

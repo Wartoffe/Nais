@@ -23,8 +23,10 @@ class CLIPEmbeddingService:
 
     def encode_text(self, texts: list[str]) -> list[list[float]]:
         # Converts a list of text strings into normalized vector embeddings
+        CLIP_MAX_CHARS = 77
+        truncated = [t[:CLIP_MAX_CHARS] for t in texts]
         return self._model.encode(
-            texts,
+            truncated,
             batch_size=32,
             show_progress_bar=False,
             convert_to_numpy=True, # Returns NumPy array for better performance before conversion

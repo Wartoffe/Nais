@@ -29,10 +29,12 @@ OLLAMA_URL="${OLLAMA_URL:-http://ollama:11434}"
   fi
 
   echo ">>> [1/3] Running books RAG ingestion (skipped if already done)..."
+  sleep 30 
   # Executes a Python module to process and load books data into the database for RAG (Retrieval-Augmented Generation)
   python -m ingest.books_ingest || echo ">>> WARNING: books ingest failed, continuing..."
 
   echo ">>> [2/3] Running book reviews ingestion (skipped if already done)..."
+  sleep 60
   # Executes a Python module to process and load book reviews data into the database
   python -m ingest.reviews_ingest || echo ">>> WARNING: reviews ingest failed, continuing..."
 
@@ -41,4 +43,4 @@ OLLAMA_URL="${OLLAMA_URL:-http://ollama:11434}"
 
 echo ">>> Starting API server..."
 # Replaces the shell process with the Uvicorn server, ensuring the app handles signals directly
-exec uvicorn lab_app:app --host 0.0.0.0 --port 8000
+exec uvicorn app:app --host 0.0.0.0 --port 8000
