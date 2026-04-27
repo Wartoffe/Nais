@@ -8,7 +8,7 @@ import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TopKnjigaDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
-
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZahtevDTO;
 import java.util.List;
 
 @Repository
@@ -81,5 +81,20 @@ public interface KnjigaRepository extends Neo4jRepository<Knjiga, String> {
         LIMIT 3
     """)
     List<TopKnjigaDTO> nadjiTop3NajtrazenijeKnjige();
+
+    //obrisi bilo koji zahtev
+    @Query("""
+    MATCH (k:Korisnik {email: $email})-[z:ZAINTERESOVAN_ZA]->(knj:Knjiga {isbn: $isbn})
+    DELETE z
+""")
+    void obrisiZahtev(String email, String isbn);
+
+    //ispisuje podatke o knjizi i vezi "zainteresovan" trazenog korisnika
+    @Query("""
+    MATCH (k:Korisnik {email: $email})-[z:ZAINTERESOVAN_ZA]->(knj:Knjiga)
+    RETURN knj.naziv AS naziv, knj.isbn AS isbn, z.brojZahteva AS brojZahteva
+""")
+    List<ZahtevDTO> findZahteviByKorisnik(String email);
+
 
 }
