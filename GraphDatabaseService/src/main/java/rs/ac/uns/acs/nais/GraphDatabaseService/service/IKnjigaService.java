@@ -1,6 +1,7 @@
 package rs.ac.uns.acs.nais.GraphDatabaseService.service;
 
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TopKnjigaDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 
@@ -19,5 +20,6 @@ public interface IKnjigaService {
     List<Knjiga> preporuciKnjige(String email);
     List<ZanrTrendDTO> topZanroviPoTrendu(Double minRelevantnost);
     List<KorisnikZanrDTO> korisniciBrojZahtevaPoZanru();
+    List<TopKnjigaDTO> nadjiTop3Najtrazenije();
 
 }

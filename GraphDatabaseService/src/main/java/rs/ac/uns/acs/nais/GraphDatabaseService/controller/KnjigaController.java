@@ -2,6 +2,7 @@ package rs.ac.uns.acs.nais.GraphDatabaseService.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TopKnjigaDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 import rs.ac.uns.acs.nais.GraphDatabaseService.service.IKnjigaService;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
@@ -85,5 +86,10 @@ public class KnjigaController {
         return ResponseEntity.ok(knjigaService.korisniciBrojZahtevaPoZanru());
     }
 
+    // UPIT6: Sistem preporucuje knjige za nabavku
+    @GetMapping("/top3")
+    public List<TopKnjigaDTO> getTop3NajtrazenijeKnjige() {
+        return knjigaService.nadjiTop3Najtrazenije();
+    }
 
 }

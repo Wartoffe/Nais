@@ -5,11 +5,11 @@ import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TopKnjigaDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 
 import java.util.List;
-import java.util.Map;
 
 @Repository
 public interface KnjigaRepository extends Neo4jRepository<Knjiga, String> {
@@ -71,5 +71,15 @@ public interface KnjigaRepository extends Neo4jRepository<Knjiga, String> {
     ORDER BY zanrNaziv, ukupnoZahteva DESC
     """)
     List<KorisnikZanrDTO> korisniciBrojZahtevaPoZanru();
+
+    //UPIT 6 (NIJE SLOZENI ALI GLAVNA POENTA FUNKCIONALNOSTIIUI!!!): Sistem nalazi najtrazenije knjige i daje predlog za nabavku spram tog trenda.!!!
+    @Query("""
+        MATCH (k:Korisnik)-[z:ZAINTERESOVAN_ZA]->(knj:Knjiga)
+        RETURN knj.isbn AS isbn, knj.naziv AS naziv, knj.autor AS autor,
+               SUM(z.brojZahteva) AS ukupnoZahteva
+        ORDER BY ukupnoZahteva DESC
+        LIMIT 3
+    """)
+    List<TopKnjigaDTO> nadjiTop3NajtrazenijeKnjige();
 
 }

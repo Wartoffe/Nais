@@ -2,12 +2,12 @@ package rs.ac.uns.acs.nais.GraphDatabaseService.service;
 
 import org.springframework.stereotype.Service;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TopKnjigaDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 import rs.ac.uns.acs.nais.GraphDatabaseService.repository.KnjigaRepository;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class KnjigaService implements IKnjigaService {
@@ -75,5 +75,8 @@ public class KnjigaService implements IKnjigaService {
         return knjigaRepository.korisniciBrojZahtevaPoZanru();
     }
 
+    public List<TopKnjigaDTO> nadjiTop3Najtrazenije() {
+        return knjigaRepository.nadjiTop3NajtrazenijeKnjige();
+    }
 
 }
