@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"google.golang.org/grpc/metadata"
 
 	"search-service/embed"
 	"search-service/models"
@@ -23,8 +25,28 @@ func NewAuthorHandler(milvus client.Client, embedder *embed.Client) *AuthorHandl
 	return &AuthorHandler{milvus: milvus, embedder: embedder}
 }
 
+func safeCtxA(c *gin.Context) context.Context {
+	ctx := c.Request.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return ctx
+}
+
+func checkClientA(c *gin.Context, milvus client.Client) bool {
+	if milvus == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "milvus client not initialized"})
+		return false
+	}
+	return true
+}
+
 // POST /authors
 func (h *AuthorHandler) Create(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
 	var in models.AuthorIn
 	if err := c.ShouldBindJSON(&in); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -37,7 +59,8 @@ func (h *AuthorHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := h.milvus.Insert(nil, schema.CollectionAuthors, "",
+	ctx := safeCtxA(c)
+	result, err := h.milvus.Insert(ctx, schema.CollectionAuthors, "",
 		entity.NewColumnVarChar("name", []string{in.Name}),
 		entity.NewColumnVarChar("lastname", []string{in.Lastname}),
 		entity.NewColumnVarChar("author_id", []string{in.AuthorID}),
@@ -52,10 +75,15 @@ func (h *AuthorHandler) Create(c *gin.Context) {
 
 // GET /authors
 func (h *AuthorHandler) List(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
-	results, err := h.milvus.Query(nil, schema.CollectionAuthors, nil,
+	ctx := safeCtxA(c)
+	results, err := h.milvus.Query(ctx, schema.CollectionAuthors, nil,
 		"id > 0", []string{"id", "name", "lastname", "author_id"},
 		client.WithLimit(int64(limit)),
 		client.WithOffset(int64(offset)),
@@ -69,13 +97,18 @@ func (h *AuthorHandler) List(c *gin.Context) {
 
 // GET /authors/:id
 func (h *AuthorHandler) Get(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
-	results, err := h.milvus.QueryByPks(nil, schema.CollectionAuthors, nil,
+	ctx := safeCtxA(c)
+	results, err := h.milvus.QueryByPks(ctx, schema.CollectionAuthors, nil,
 		entity.NewColumnInt64("id", []int64{id}),
 		[]string{"id", "name", "lastname", "author_id"},
 	)
@@ -89,6 +122,10 @@ func (h *AuthorHandler) Get(c *gin.Context) {
 
 // PUT /authors/:id
 func (h *AuthorHandler) Update(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
@@ -101,7 +138,8 @@ func (h *AuthorHandler) Update(c *gin.Context) {
 		return
 	}
 
-	existing, err := h.milvus.QueryByPks(nil, schema.CollectionAuthors, nil,
+	ctx := safeCtxA(c)
+	existing, err := h.milvus.QueryByPks(ctx, schema.CollectionAuthors, nil,
 		entity.NewColumnInt64("id", []int64{id}),
 		[]string{"id", "name", "lastname", "author_id"},
 	)
@@ -130,12 +168,12 @@ func (h *AuthorHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := h.milvus.DeleteByPks(nil, schema.CollectionAuthors, "", entity.NewColumnInt64("id", []int64{id})); err != nil {
+	if err := h.milvus.DeleteByPks(ctx, schema.CollectionAuthors, "", entity.NewColumnInt64("id", []int64{id})); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	result, err := h.milvus.Insert(nil, schema.CollectionAuthors, "",
+	result, err := h.milvus.Insert(ctx, schema.CollectionAuthors, "",
 		entity.NewColumnVarChar("name", []string{newName}),
 		entity.NewColumnVarChar("lastname", []string{newLast}),
 		entity.NewColumnVarChar("author_id", []string{newAID}),
@@ -150,13 +188,18 @@ func (h *AuthorHandler) Update(c *gin.Context) {
 
 // DELETE /authors/:id
 func (h *AuthorHandler) Delete(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
-	existing, err := h.milvus.QueryByPks(nil, schema.CollectionAuthors, nil,
+	ctx := safeCtxA(c)
+	existing, err := h.milvus.QueryByPks(ctx, schema.CollectionAuthors, nil,
 		entity.NewColumnInt64("id", []int64{id}),
 		[]string{"id"},
 	)
@@ -165,7 +208,7 @@ func (h *AuthorHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.milvus.DeleteByPks(nil, schema.CollectionAuthors, "", entity.NewColumnInt64("id", []int64{id})); err != nil {
+	if err := h.milvus.DeleteByPks(ctx, schema.CollectionAuthors, "", entity.NewColumnInt64("id", []int64{id})); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -174,6 +217,10 @@ func (h *AuthorHandler) Delete(c *gin.Context) {
 
 // GET /authors/search?query=...&top_k=5
 func (h *AuthorHandler) Search(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
 	query := c.Query("query")
 	if query == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query param required"})
@@ -188,7 +235,14 @@ func (h *AuthorHandler) Search(c *gin.Context) {
 	}
 
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
-	results, err := h.milvus.Search(nil, schema.CollectionAuthors, nil,
+	ctx := safeCtxA(c)
+
+	// defensive metadata access to avoid nil-pointer in interceptors
+	if md, ok := metadata.FromOutgoingContext(ctx); ok {
+		_ = md
+	}
+
+	results, err := h.milvus.Search(ctx, schema.CollectionAuthors, nil,
 		"", []string{"id", "name", "lastname", "author_id"},
 		[]entity.Vector{entity.FloatVector(vec)},
 		"bio_vector",
@@ -259,13 +313,18 @@ func colsToAuthors(cols []entity.Column) []models.AuthorOut {
 
 // GET /queries/authors/by-author-id?author_id=AUTH002
 func (h *AuthorHandler) ByAuthorID(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
 	authorID := c.Query("author_id")
 	if authorID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "author_id query param required"})
 		return
 	}
 	expr := fmt.Sprintf("author_id == %q", authorID)
-	results, err := h.milvus.Query(nil, schema.CollectionAuthors, nil, expr, []string{"id", "name", "lastname", "author_id"}, client.WithLimit(10))
+	ctx := safeCtxA(c)
+	results, err := h.milvus.Query(ctx, schema.CollectionAuthors, nil, expr, []string{"id", "name", "lastname", "author_id"}, client.WithLimit(10))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -276,6 +335,10 @@ func (h *AuthorHandler) ByAuthorID(c *gin.Context) {
 // GET /queries/authors/search-filtered?query=orwell&lastname=Orwell&author_id=AUTH002&top_k=5
 // Complex query: vector search + scalar filtering with at least two filter conditions.
 func (h *AuthorHandler) SearchFiltered(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
 	query := c.Query("query")
 	lastname := c.Query("lastname")
 	authorID := c.Query("author_id")
@@ -291,7 +354,8 @@ func (h *AuthorHandler) SearchFiltered(c *gin.Context) {
 	}
 	expr := fmt.Sprintf("lastname == %q && author_id == %q", lastname, authorID)
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
-	results, err := h.milvus.Search(nil, schema.CollectionAuthors, nil,
+	ctx := safeCtxA(c)
+	results, err := h.milvus.Search(ctx, schema.CollectionAuthors, nil,
 		expr, []string{"id", "name", "lastname", "author_id"},
 		[]entity.Vector{entity.FloatVector(vec)}, "bio_vector", entity.COSINE, topK, sp)
 	if err != nil {
@@ -319,3 +383,4 @@ func authorSearchResult(results []client.SearchResult) []models.AuthorOut {
 	}
 	return authors
 }
+
