@@ -32,12 +32,15 @@ public class SimilarityController {
         return ResponseEntity.ok(similarToService.readAll(bookId));
     }
     @PutMapping("/book/{bookId}/target/{targetBookId}")
-    public ResponseEntity<Book> updateScore(
+    public ResponseEntity<Void> updateScore(
             @PathVariable String bookId,
             @PathVariable String targetBookId,
             @RequestBody Map<String, Double> body) {
+
         double newScore = body.get("score");
-        return ResponseEntity.ok(similarToService.updateScore(bookId, targetBookId, newScore));
+        similarToService.updateScore(bookId, targetBookId, newScore);
+
+        return ResponseEntity.ok().build();
     }
     @DeleteMapping("/book/{bookId}/target/{targetBookId}")
     public ResponseEntity<Book> remove(

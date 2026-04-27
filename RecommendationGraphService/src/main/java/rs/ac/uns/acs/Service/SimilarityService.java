@@ -47,15 +47,8 @@ public class SimilarityService {
     public List<Similar> readAll(String bookId) {
         return findBook(bookId).getSimilarBooks();
     }
-    public Book updateScore(String bookId, String targetBookId, double newScore) {
-        Book book = findBook(bookId);
-        Similar similar = book.getSimilarBooks().stream()
-                .filter(s -> s.getBook().getId().equals(targetBookId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException(
-                        "No SIMILAR_TO relationship between " + bookId + " and " + targetBookId));
-        similar.setScore(newScore);
-        return bookRepository.save(book);
+    public void updateScore(String bookId, String targetBookId, double newScore) {
+        bookRepository.updateSimilarityScore(bookId, targetBookId, newScore);
     }
     public Book remove(String bookId, String targetBookId) {
         bookRepository.deleteSimilarBothDirections(bookId, targetBookId);
