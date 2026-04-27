@@ -11,6 +11,9 @@ from controller.reviews_controller import router as reviews_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s")
 
+import py_eureka_client.eureka_client as eureka_client
+from config import EUREKA_SERVER, APP_NAME
+
 app = FastAPI(
     title="Vector Database Service - Library",
     description="Books and reviews vector search API with semantic, hybrid, and chat endpoints.",
@@ -18,6 +21,14 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+@app.on_event("startup")
+async def startup():
+    await eureka_client.init_async(
+        eureka_server=EUREKA_SERVER,
+        app_name=APP_NAME,          # "vector-database-service" iz config.py
+        instance_port=APP_PORT,     # 8000
+    )
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(books_router)

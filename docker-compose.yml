@@ -1,7 +1,42 @@
 version: "3.3"
 
 services:
+  #
+  # NEEDED FOR GENERAL FUNCTIONING
+  #
+  # ── Eureka ────────────────────────────────────────────────────────────────
+  # Service Discovery: Keeps track of all microservices
+  eureka-server:
+    build: # Instructions for building a custom image from a local directory
+      context: ./EurekaService # The directory containing the build files
+      dockerfile: Dockerfile  # The specific file used to build the image
+    image: eureka-server:latest # The name and tag given to the resulting image
+    ports: # Maps host machine ports to container ports (HOST:CONTAINER)
+      - "8761:8761"
+    healthcheck: # A test to check if the container is running correctly
+      # test: The actual command executed to verify the container's health
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 20s # How often to run the check
+      timeout: 10s # How long to wait for a response
+      retries: 5 # Number of failures before marking as unhealthy
 
+  # ── Gateway API ───────────────────────────────────────────────────────────
+  gateway-api:
+    build:
+      context: ./GatewayService
+      dockerfile: Dockerfile
+    image: gateway-api:latest
+    environment: # Sets environment variables inside the container
+      # Key-Value pairs used to configure the application environment at runtime
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    depends_on: # Ensures this service starts only after the listed services are running
+      - eureka-server
+    ports:
+      - "9003:9000"
+
+  #
+  # Nenad's dependencies
+  #
   # ── Milvus dependencies ───────────────────────────────────────────────────
 
   etcd:
@@ -13,7 +48,7 @@ services:
       - ETCD_QUOTA_BACKEND_BYTES=4294967296
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
-      - ./volumes/etcd:/etcd
+      - ./VectorDatabaseService/volumes/etcd:/etcd
     command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
@@ -31,7 +66,7 @@ services:
       - "9001:9001"
       - "9000:9000"
     volumes:
-      - ./volumes/minio:/minio_data
+      - ./VectorDatabaseService/volumes/minio:/minio_data
     command: minio server /minio_data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -52,7 +87,7 @@ services:
       MINIO_ADDRESS: minio:9000
       MQ_TYPE: woodpecker
     volumes:
-      - ./volumes/milvus:/var/lib/milvus
+      - ./VectorDatabaseService/volumes/milvus:/var/lib/milvus
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
@@ -71,7 +106,7 @@ services:
 
   vector-database-service:
     build:
-      context: .              
+      context: ./VectorDatabaseService               
       dockerfile: Dockerfile
     image: vector-database-service:latest
     restart: on-failure
@@ -87,10 +122,11 @@ services:
       # Uvicorn
       APP_PORT: 8000
     volumes:
-      - ./data:/app/data:ro    # seed / fixture data (read-only inside container)
+      - ./VectorDatabaseService/data:/app/data:ro    # seed / fixture data (read-only inside container)
     depends_on:
-      standalone:
-        condition: service_healthy
+      - eureka-server
+      - ollama
+      - standalone
     healthcheck:
       # Mirrors the /health endpoint pattern from health_controller.py
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -99,7 +135,7 @@ services:
       retries: 5
       start_period: 30s        # give the app time to load embedding models
 
-  # ── LLM (Ollama) ────────────────────────────────────────────────
+  # ── LLM (Ollama) ──────────────────────────────────────────────────────────
 
   ollama:
     image: ollama/ollama:latest
@@ -114,7 +150,7 @@ services:
       timeout: 5s
       retries: 12
 
-  # ── Attu UI ─────────────────────────────────────────────────────
+  # ── Attu UI ───────────────────────────────────────────────────────────────
 
   attu:
     image: zilliz/attu:v2.4
@@ -127,11 +163,11 @@ services:
       standalone:
         condition: service_healthy
   
-  # ── Streamlit ───────────────────────────────────────────────────
+  # ── Streamlit ─────────────────────────────────────────────────────────────
   
   streamlit:
     build:
-      context: .
+      context: ./VectorDatabaseService
       dockerfile: Dockerfile.streamlit
     container_name: streamlit
     ports:
@@ -142,7 +178,7 @@ services:
       - vector-database-service
     restart: on-failure
 
-# ── Named volumes ─────────────────────────────────────────────────────────────
+# ── Named volumes ───────────────────────────────────────────────────────────
 
 volumes:
   ollama_data: {}
