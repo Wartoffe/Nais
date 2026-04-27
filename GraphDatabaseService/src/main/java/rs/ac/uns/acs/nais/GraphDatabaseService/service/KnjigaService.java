@@ -1,6 +1,8 @@
 package rs.ac.uns.acs.nais.GraphDatabaseService.service;
 
 import org.springframework.stereotype.Service;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 import rs.ac.uns.acs.nais.GraphDatabaseService.repository.KnjigaRepository;
 
@@ -46,5 +48,32 @@ public class KnjigaService implements IKnjigaService {
     public void delete(String isbn) {
         knjigaRepository.deleteById(isbn);
     }
+
+
+    @Override
+    public Knjiga dodajIliAzurirajZahtev(String email, String isbn) {
+        return knjigaRepository.dodajIliAzurirajZahtev(email, isbn);
+    }
+
+    @Override
+    public Long obrisiSlabeTrendVeze(Double prag) {
+        return knjigaRepository.obrisiSlabeTrendVeze(prag);
+    }
+
+    @Override
+    public List<Knjiga> preporuciKnjige(String email) {
+        return knjigaRepository.preporuciKnjige(email);
+    }
+
+    @Override
+    public List<ZanrTrendDTO> topZanroviPoTrendu(Double minRelevantnost) {
+        return knjigaRepository.topZanroviPoTrendu(minRelevantnost);
+    }
+
+    @Override
+    public List<KorisnikZanrDTO> korisniciBrojZahtevaPoZanru() {
+        return knjigaRepository.korisniciBrojZahtevaPoZanru();
+    }
+
 
 }

@@ -11,7 +11,7 @@ public class Korisnik {
 
     private String ime;
     private String prezime;
-    private String tipKorisnika; // "student", "nastavnik", "clan"
+    private String tipKorisnika; // "clan", "bibliotekar" nez ni sama sta jos vise
 
     @Relationship(type = "ZAINTERESOVAN_ZA", direction = Relationship.Direction.OUTGOING)
     private List<ZainteresovanRelacija> zahtevaneKnjige;
