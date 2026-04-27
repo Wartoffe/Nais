@@ -1,0 +1,26 @@
+server:
+  port: 9000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+      
+spring:
+  application:
+    name: gateway-api
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: vector-database-service
+          uri: lb://vector-database-service
+          predicates:
+            - Path=/vector-database-service/**
+          filters:
+            - StripPrefix=1
+        
+
