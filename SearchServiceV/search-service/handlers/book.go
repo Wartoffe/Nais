@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"google.golang.org/grpc/metadata"
 
 	"search-service/embed"
 	"search-service/models"
@@ -24,8 +26,28 @@ func NewBookHandler(milvus client.Client, embedder *embed.Client) *BookHandler {
 	return &BookHandler{milvus: milvus, embedder: embedder}
 }
 
+func safeCtx(c *gin.Context) context.Context {
+	ctx := c.Request.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return ctx
+}
+
+func checkClient(c *gin.Context, milvus client.Client) bool {
+	if milvus == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "milvus client not initialized"})
+		return false
+	}
+	return true
+}
+
 // POST /books
 func (h *BookHandler) Create(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	var in models.BookIn
 	if err := c.ShouldBindJSON(&in); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -43,7 +65,8 @@ func (h *BookHandler) Create(c *gin.Context) {
 	author := []string{in.Author}
 	vectors := [][]float32{vec}
 
-	result, err := h.milvus.Insert(nil, schema.CollectionBooks, "",
+	ctx := safeCtx(c)
+	result, err := h.milvus.Insert(ctx, schema.CollectionBooks, "",
 		entity.NewColumnVarChar("isbn", isbn),
 		entity.NewColumnVarChar("title", title),
 		entity.NewColumnVarChar("author", author),
@@ -58,11 +81,16 @@ func (h *BookHandler) Create(c *gin.Context) {
 
 // GET /books
 func (h *BookHandler) List(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
 	outputFields := []string{"id", "isbn", "title", "author"}
-	results, err := h.milvus.Query(nil, schema.CollectionBooks, nil,
+	ctx := safeCtx(c)
+	results, err := h.milvus.Query(ctx, schema.CollectionBooks, nil,
 		"id > 0", outputFields,
 		client.WithLimit(int64(limit)),
 		client.WithOffset(int64(offset)),
@@ -78,13 +106,18 @@ func (h *BookHandler) List(c *gin.Context) {
 
 // GET /books/:id
 func (h *BookHandler) Get(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
-	results, err := h.milvus.QueryByPks(nil, schema.CollectionBooks, nil,
+	ctx := safeCtx(c)
+	results, err := h.milvus.QueryByPks(ctx, schema.CollectionBooks, nil,
 		entity.NewColumnInt64("id", []int64{id}),
 		[]string{"id", "isbn", "title", "author"},
 	)
@@ -99,6 +132,10 @@ func (h *BookHandler) Get(c *gin.Context) {
 
 // PUT /books/:id
 func (h *BookHandler) Update(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
@@ -111,8 +148,9 @@ func (h *BookHandler) Update(c *gin.Context) {
 		return
 	}
 
+	ctx := safeCtx(c)
 	// fetch existing
-	existing, err := h.milvus.QueryByPks(nil, schema.CollectionBooks, nil,
+	existing, err := h.milvus.QueryByPks(ctx, schema.CollectionBooks, nil,
 		entity.NewColumnInt64("id", []int64{id}),
 		[]string{"id", "isbn", "title", "author"},
 	)
@@ -141,12 +179,12 @@ func (h *BookHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := h.milvus.DeleteByPks(nil, schema.CollectionBooks, "", entity.NewColumnInt64("id", []int64{id})); err != nil {
+	if err := h.milvus.DeleteByPks(ctx, schema.CollectionBooks, "", entity.NewColumnInt64("id", []int64{id})); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	result, err := h.milvus.Insert(nil, schema.CollectionBooks, "",
+	result, err := h.milvus.Insert(ctx, schema.CollectionBooks, "",
 		entity.NewColumnVarChar("isbn", []string{newISBN}),
 		entity.NewColumnVarChar("title", []string{newTitle}),
 		entity.NewColumnVarChar("author", []string{newAuthor}),
@@ -161,13 +199,18 @@ func (h *BookHandler) Update(c *gin.Context) {
 
 // DELETE /books/:id
 func (h *BookHandler) Delete(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
-	existing, err := h.milvus.QueryByPks(nil, schema.CollectionBooks, nil,
+	ctx := safeCtx(c)
+	existing, err := h.milvus.QueryByPks(ctx, schema.CollectionBooks, nil,
 		entity.NewColumnInt64("id", []int64{id}),
 		[]string{"id"},
 	)
@@ -176,7 +219,7 @@ func (h *BookHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.milvus.DeleteByPks(nil, schema.CollectionBooks, "", entity.NewColumnInt64("id", []int64{id})); err != nil {
+	if err := h.milvus.DeleteByPks(ctx, schema.CollectionBooks, "", entity.NewColumnInt64("id", []int64{id})); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -185,6 +228,10 @@ func (h *BookHandler) Delete(c *gin.Context) {
 
 // GET /books/search?query=...&top_k=5
 func (h *BookHandler) Search(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	query := c.Query("query")
 	if query == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query param required"})
@@ -199,7 +246,14 @@ func (h *BookHandler) Search(c *gin.Context) {
 	}
 
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
-	results, err := h.milvus.Search(nil, schema.CollectionBooks, nil,
+	ctx := safeCtx(c)
+
+	// defensive metadata access to avoid nil-pointer in interceptors
+	if md, ok := metadata.FromOutgoingContext(ctx); ok {
+		_ = md
+	}
+
+	results, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
 		"", []string{"id", "isbn", "title", "author"},
 		[]entity.Vector{entity.FloatVector(vec)},
 		"title_vector",
@@ -270,13 +324,18 @@ func colsToBooks(cols []entity.Column) []models.BookOut {
 
 // GET /queries/books/count-by-author?author=George%20Orwell
 func (h *BookHandler) CountByAuthor(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	author := c.Query("author")
 	if author == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "author query param required"})
 		return
 	}
 	expr := fmt.Sprintf("author == %q", author)
-	results, err := h.milvus.Query(nil, schema.CollectionBooks, nil, expr, []string{"id"})
+	ctx := safeCtx(c)
+	results, err := h.milvus.Query(ctx, schema.CollectionBooks, nil, expr, []string{"id"})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -291,6 +350,10 @@ func (h *BookHandler) CountByAuthor(c *gin.Context) {
 // GET /queries/books/search-filtered?query=dystopian&author=George%20Orwell&isbn=978-0-7432-7356-5&top_k=5
 // Complex query: vector search + scalar filtering with at least two filter conditions.
 func (h *BookHandler) SearchFiltered(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	query := c.Query("query")
 	author := c.Query("author")
 	isbn := c.Query("isbn")
@@ -306,7 +369,8 @@ func (h *BookHandler) SearchFiltered(c *gin.Context) {
 	}
 	expr := fmt.Sprintf("author == %q && isbn == %q", author, isbn)
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
-	results, err := h.milvus.Search(nil, schema.CollectionBooks, nil,
+	ctx := safeCtx(c)
+	results, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
 		expr, []string{"id", "isbn", "title", "author"},
 		[]entity.Vector{entity.FloatVector(vec)}, "title_vector", entity.COSINE, topK, sp)
 	if err != nil {
@@ -319,6 +383,10 @@ func (h *BookHandler) SearchFiltered(c *gin.Context) {
 // GET /queries/books/hybrid?query=animal&text=farm&top_k=10
 // Complex query: vector search followed by application-level text filtering.
 func (h *BookHandler) HybridSearch(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
 	query := c.Query("query")
 	text := c.Query("text")
 	if query == "" || text == "" {
@@ -332,7 +400,8 @@ func (h *BookHandler) HybridSearch(c *gin.Context) {
 		return
 	}
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
-	results, err := h.milvus.Search(nil, schema.CollectionBooks, nil,
+	ctx := safeCtx(c)
+	results, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
 		"", []string{"id", "isbn", "title", "author"},
 		[]entity.Vector{entity.FloatVector(vec)}, "title_vector", entity.COSINE, topK*3, sp)
 	if err != nil {
@@ -371,3 +440,4 @@ func bookSearchResult(results []client.SearchResult) []models.BookOut {
 	}
 	return books
 }
+
