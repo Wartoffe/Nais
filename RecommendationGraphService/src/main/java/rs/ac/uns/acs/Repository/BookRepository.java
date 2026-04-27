@@ -42,7 +42,9 @@ public interface BookRepository extends Neo4jRepository<Book, String> {
             MATCH (b:Book) WHERE b.id IN m.bookHistory
             MATCH (b)-[:WRITTEN_BY]->(a:Author)<-[:WRITTEN_BY]-(rec:Book)
             WHERE NOT rec.id IN m.bookHistory
+            with rec, COUNT(a) AS score
             RETURN rec
+            ORDER BY score DESC
             """)
     List<Book> recommendByAuthor(Long memberId);
 
