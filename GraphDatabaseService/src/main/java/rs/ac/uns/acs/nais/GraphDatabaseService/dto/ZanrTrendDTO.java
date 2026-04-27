@@ -1,13 +1,13 @@
 package rs.ac.uns.acs.nais.GraphDatabaseService.dto;
 
 public class ZanrTrendDTO {
-    private String zanr;
+    private String zanrNaziv;
     private String trendIme;
     private Double prosecnaRelevantnost;
     private Long brojKnjiga;
 
-    public String getZanr() { return zanr; }
-    public void setZanr(String zanr) { this.zanr = zanr; }
+    public String getZanr() { return zanrNaziv; }
+    public void setZanr(String zanr) { this.zanrNaziv = zanr; }
 
     public String getTrendIme() { return trendIme; }
     public void setTrendIme(String trendIme) { this.trendIme = trendIme; }

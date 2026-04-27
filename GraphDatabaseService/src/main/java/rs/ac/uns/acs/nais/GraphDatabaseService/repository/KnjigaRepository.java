@@ -52,11 +52,11 @@ public interface KnjigaRepository extends Neo4jRepository<Knjiga, String> {
     // UPIT 4 (MATCH+WHERE+WITH+AGG): Top zanrovi po prosecnoj trend relevantnosti
     @Query("""
     MATCH (z:Zanr)<-[:PRIPADA]-(k:Knjiga)-[r:JE_TREND]->(t:Trend)
-    WITH z.naziv AS zan, t.naziv AS trendIme,
+    WITH z.naziv AS zanrNaziv, t.naziv AS trendIme,
          avg(r.relevantnostScore) AS prosecnaRelevantnost,
          count(k) AS brojKnjiga
     WHERE prosecnaRelevantnost > $minRelevantnost
-    RETURN zan, trendIme, prosecnaRelevantnost, brojKnjiga
+    RETURN zanrNaziv, trendIme, prosecnaRelevantnost, brojKnjiga
     ORDER BY prosecnaRelevantnost DESC
     """)
     List<ZanrTrendDTO> topZanroviPoTrendu(@Param("minRelevantnost") Double minRelevantnost);
@@ -64,11 +64,11 @@ public interface KnjigaRepository extends Neo4jRepository<Knjiga, String> {
     // UPIT 5 (MATCH+WHERE+WITH+AGG): Korisnici sa najvise zahteva grupisani po zanru
     @Query("""
     MATCH (u:Korisnik)-[r:ZAINTERESOVAN_ZA]->(k:Knjiga)-[:PRIPADA]->(z:Zanr)
-    WITH z.naziv AS zanr, u.ime AS ime, u.prezime AS prezime,
+    WITH z.naziv AS zanrNaziv, u.ime AS ime, u.prezime AS prezime,
          u.email AS email, sum(r.brojZahteva) AS ukupnoZahteva
     WHERE ukupnoZahteva > 1
-    RETURN zanr, ime, prezime, email, ukupnoZahteva
-    ORDER BY zanr, ukupnoZahteva DESC
+    RETURN zanrNaziv, ime, prezime, email, ukupnoZahteva
+    ORDER BY zanrNaziv, ukupnoZahteva DESC
     """)
     List<KorisnikZanrDTO> korisniciBrojZahtevaPoZanru();
 
