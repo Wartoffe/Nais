@@ -199,3 +199,137 @@ search-service-1  | /usr/local/go/src/net/http/server.go:3142 (0x6db90d)
 search-service-1  | /usr/local/go/src/net/http/server.go:2044 (0x6d6be7)
 search-service-1  | /usr/local/go/src/runtime/asm_amd64.s:1695 (0x470ba0)
 search-service-1  | [0m
+search-service-1  | [GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+search-service-1  | 
+search-service-1  | [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+search-service-1  | 2026/04/27 16:51:15 search-service listening on :8085
+search-service-1  |  - using env:	export GIN_MODE=release
+search-service-1  |  - using code:	gin.SetMode(gin.ReleaseMode)
+search-service-1  | 
+search-service-1  | [GIN-debug] GET    /health                   --> main.main.func1 (3 handlers)
+search-service-1  | [GIN-debug] POST   /books                    --> search-service/handlers.(*BookHandler).Create-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /books                    --> search-service/handlers.(*BookHandler).List-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /books/search             --> search-service/handlers.(*BookHandler).Search-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /books/:id                --> search-service/handlers.(*BookHandler).Get-fm (3 handlers)
+search-service-1  | [GIN-debug] PUT    /books/:id                --> search-service/handlers.(*BookHandler).Update-fm (3 handlers)
+search-service-1  | [GIN-debug] DELETE /books/:id                --> search-service/handlers.(*BookHandler).Delete-fm (3 handlers)
+search-service-1  | [GIN-debug] POST   /authors                  --> search-service/handlers.(*AuthorHandler).Create-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /authors                  --> search-service/handlers.(*AuthorHandler).List-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /authors/search           --> search-service/handlers.(*AuthorHandler).Search-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /authors/:id              --> search-service/handlers.(*AuthorHandler).Get-fm (3 handlers)
+search-service-1  | [GIN-debug] PUT    /authors/:id              --> search-service/handlers.(*AuthorHandler).Update-fm (3 handlers)
+search-service-1  | [GIN-debug] DELETE /authors/:id              --> search-service/handlers.(*AuthorHandler).Delete-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/books/count-by-author --> search-service/handlers.(*BookHandler).CountByAuthor-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/books/search-filtered --> search-service/handlers.(*BookHandler).SearchFiltered-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/books/hybrid     --> search-service/handlers.(*BookHandler).HybridSearch-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/authors/by-author-id --> search-service/handlers.(*AuthorHandler).ByAuthorID-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/authors/search-filtered --> search-service/handlers.(*AuthorHandler).SearchFiltered-fm (3 handlers)
+search-service-1  | [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+search-service-1  | Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+search-service-1  | [GIN-debug] Listening and serving HTTP on :8085
+search-service-1  | 
+search-service-1  | 
+search-service-1  | [GIN] 2026/04/27 - 16:52:28 | 500 |    1.556926ms |      172.20.0.1 | GET      "/books"
+search-service-1  | [31m2026/04/27 16:52:28 [Recovery] 2026/04/27 - 16:52:28 panic recovered:
+search-service-1  | GET /books HTTP/1.1
+search-service-1  | Host: localhost:8085
+search-service-1  | Accept: */*
+search-service-1  | Accept-Encoding: gzip, deflate, br
+search-service-1  | Connection: keep-alive
+search-service-1  | Postman-Token: 8aa360ec-2096-4f15-bfdb-d177550c9eb3
+search-service-1  | User-Agent: PostmanRuntime/7.51.1
+search-service-1  | 
+search-service-1  | 
+search-service-1  | runtime error: invalid memory address or nil pointer dereference
+search-service-1  | /usr/local/go/src/runtime/panic.go:261 (0x453837)
+search-service-1  | /usr/local/go/src/runtime/signal_unix.go:881 (0x453805)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/metadata/metadata.go:169 (0x9eb21c)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-sdk-go/v2@v2.4.2/client/interceptor.go:41 (0xbb14d9)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-sdk-go/v2@v2.4.2/client/interceptor.go:60 (0xba4c0a)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/clientconn.go:361 (0xa3bf64)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-sdk-go/v2@v2.4.2/client/rate_limit_interceptor.go:52 (0xba50a4)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/clientconn.go:361 (0xa3bf64)
+search-service-1  | /go/pkg/mod/github.com/grpc-ecosystem/go-grpc-middleware@v1.3.0/retry/retry.go:44 (0xb9bdfc)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/clientconn.go:349 (0xa3bc97)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/call.go:35 (0xa39704)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-proto/go-api/v2@v2.4.10-0.20240819025435-512e3b98866a/milvuspb/milvus.pb.go:11825 (0xa8b1a4)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-sdk-go/v2@v2.4.2/client/data.go:347 (0xba80c6)
+search-service-1  | /app/handlers/book.go:65 (0xbc400b)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x91d299)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/recovery.go:102 (0x91d287)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x91c3c4)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/logger.go:249 (0x91c3ab)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x91b7b1)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:633 (0x91b220)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:589 (0x91ad51)
+search-service-1  | /usr/local/go/src/net/http/server.go:3142 (0x6db90d)
+search-service-1  | /usr/local/go/src/net/http/server.go:2044 (0x6d6be7)
+search-service-1  | /usr/local/go/src/runtime/asm_amd64.s:1695 (0x470ba0)
+search-service-1  | [0m
+search-service-1  | [GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+search-service-1  | 
+search-service-1  | 2026/04/27 20:06:55 search-service listening on :8085
+search-service-1  | [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+search-service-1  |  - using env:	export GIN_MODE=release
+search-service-1  |  - using code:	gin.SetMode(gin.ReleaseMode)
+search-service-1  | 
+search-service-1  | [GIN-debug] GET    /health                   --> main.main.func1 (3 handlers)
+search-service-1  | [GIN-debug] POST   /books                    --> search-service/handlers.(*BookHandler).Create-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /books                    --> search-service/handlers.(*BookHandler).List-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /books/search             --> search-service/handlers.(*BookHandler).Search-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /books/:id                --> search-service/handlers.(*BookHandler).Get-fm (3 handlers)
+search-service-1  | [GIN-debug] PUT    /books/:id                --> search-service/handlers.(*BookHandler).Update-fm (3 handlers)
+search-service-1  | [GIN-debug] DELETE /books/:id                --> search-service/handlers.(*BookHandler).Delete-fm (3 handlers)
+search-service-1  | [GIN-debug] POST   /authors                  --> search-service/handlers.(*AuthorHandler).Create-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /authors                  --> search-service/handlers.(*AuthorHandler).List-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /authors/search           --> search-service/handlers.(*AuthorHandler).Search-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /authors/:id              --> search-service/handlers.(*AuthorHandler).Get-fm (3 handlers)
+search-service-1  | [GIN-debug] PUT    /authors/:id              --> search-service/handlers.(*AuthorHandler).Update-fm (3 handlers)
+search-service-1  | [GIN-debug] DELETE /authors/:id              --> search-service/handlers.(*AuthorHandler).Delete-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/books/count-by-author --> search-service/handlers.(*BookHandler).CountByAuthor-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/books/search-filtered --> search-service/handlers.(*BookHandler).SearchFiltered-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/books/hybrid     --> search-service/handlers.(*BookHandler).HybridSearch-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/authors/by-author-id --> search-service/handlers.(*AuthorHandler).ByAuthorID-fm (3 handlers)
+search-service-1  | [GIN-debug] GET    /queries/authors/search-filtered --> search-service/handlers.(*AuthorHandler).SearchFiltered-fm (3 handlers)
+search-service-1  | [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+search-service-1  | Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+search-service-1  | [GIN-debug] Listening and serving HTTP on :8085
+search-service-1  | 
+search-service-1  | 
+search-service-1  | [GIN] 2026/04/27 - 20:08:09 | 500 |     587.758µs |      172.20.0.1 | GET      "/books"
+search-service-1  | [31m2026/04/27 20:08:09 [Recovery] 2026/04/27 - 20:08:09 panic recovered:
+search-service-1  | GET /books HTTP/1.1
+search-service-1  | Host: localhost:8085
+search-service-1  | Accept: */*
+search-service-1  | Accept-Encoding: gzip, deflate, br
+search-service-1  | Connection: keep-alive
+search-service-1  | Postman-Token: 92ff99df-76bd-4f7a-98f6-67a08c5c973a
+search-service-1  | User-Agent: PostmanRuntime/7.51.1
+search-service-1  | 
+search-service-1  | 
+search-service-1  | runtime error: invalid memory address or nil pointer dereference
+search-service-1  | /usr/local/go/src/runtime/panic.go:261 (0x453837)
+search-service-1  | /usr/local/go/src/runtime/signal_unix.go:881 (0x453805)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/metadata/metadata.go:169 (0x9eb21c)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-sdk-go/v2@v2.4.2/client/interceptor.go:41 (0xbb14d9)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-sdk-go/v2@v2.4.2/client/interceptor.go:60 (0xba4c0a)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/clientconn.go:361 (0xa3bf64)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-sdk-go/v2@v2.4.2/client/rate_limit_interceptor.go:52 (0xba50a4)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/clientconn.go:361 (0xa3bf64)
+search-service-1  | /go/pkg/mod/github.com/grpc-ecosystem/go-grpc-middleware@v1.3.0/retry/retry.go:44 (0xb9bdfc)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/clientconn.go:349 (0xa3bc97)
+search-service-1  | /go/pkg/mod/google.golang.org/grpc@v1.48.0/call.go:35 (0xa39704)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-proto/go-api/v2@v2.4.10-0.20240819025435-512e3b98866a/milvuspb/milvus.pb.go:11825 (0xa8b1a4)
+search-service-1  | /go/pkg/mod/github.com/milvus-io/milvus-sdk-go/v2@v2.4.2/client/data.go:347 (0xba80c6)
+search-service-1  | /app/handlers/book.go:65 (0xbc400b)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x91d299)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/recovery.go:102 (0x91d287)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x91c3c4)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/logger.go:249 (0x91c3ab)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185 (0x91b7b1)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:633 (0x91b220)
+search-service-1  | /go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:589 (0x91ad51)
+search-service-1  | /usr/local/go/src/net/http/server.go:3142 (0x6db90d)
+search-service-1  | /usr/local/go/src/net/http/server.go:2044 (0x6d6be7)
+search-service-1  | /usr/local/go/src/runtime/asm_amd64.s:1695 (0x470ba0)
+search-service-1  | [0m

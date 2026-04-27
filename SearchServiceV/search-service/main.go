@@ -18,11 +18,9 @@ import (
 
 func main() {
 	cfg := config.Load()
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer cancel()
 
 	milvusAddr := fmt.Sprintf("%s:%s", cfg.MilvusHost, cfg.MilvusPort)
-	milvusClient, err := client.NewGrpcClient(ctx, milvusAddr)
+	milvusClient, err := client.NewGrpcClient(context.Background(), milvusAddr)
 	if err != nil {
 		log.Fatalf("failed to connect to Milvus at %s: %v", milvusAddr, err)
 	}
