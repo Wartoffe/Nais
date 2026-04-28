@@ -33,8 +33,7 @@ type embedResponse struct {
 	Embedding []float32 `json:"embedding"`
 }
 
-// Text embeds text with Ollama. If Ollama/model is not available, it falls back
-// to a deterministic local embedding so the project can still be started and defended.
+//Text embeder
 func (c *Client) Text(text string) ([]float32, error) {
 	body, _ := json.Marshal(embedRequest{Model: c.model, Prompt: text})
 	resp, err := c.http.Post(c.baseURL+"/api/embeddings", "application/json", bytes.NewReader(body))

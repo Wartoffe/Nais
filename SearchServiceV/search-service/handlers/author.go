@@ -237,7 +237,6 @@ func (h *AuthorHandler) Search(c *gin.Context) {
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
 	ctx := safeCtxA(c)
 
-	// defensive metadata access to avoid nil-pointer in interceptors
 	if md, ok := metadata.FromOutgoingContext(ctx); ok {
 		_ = md
 	}
@@ -333,7 +332,7 @@ func (h *AuthorHandler) ByAuthorID(c *gin.Context) {
 }
 
 // GET /queries/authors/search-filtered?query=orwell&lastname=Orwell&author_id=AUTH002&top_k=5
-// Complex query: vector search + scalar filtering with at least two filter conditions.
+// Complex query: vector search + two scalar filters (lastname + author_id).
 func (h *AuthorHandler) SearchFiltered(c *gin.Context) {
 	if !checkClientA(c, h.milvus) {
 		return
@@ -365,6 +364,76 @@ func (h *AuthorHandler) SearchFiltered(c *gin.Context) {
 	c.JSON(http.StatusOK, authorSearchResult(results))
 }
 
+// GET /queries/authors/search-iterator?query=russian+novelist&lastname=Tolstoy&batch=50&max=200
+//
+// Complex query: vector search with a scalar filter (lastname) executed via a
+// search iterator. author_id is intentionally excluded — it is an opaque
+// identifier, not a semantic field. lastname is used as the filter because it
+// is a meaningful grouping dimension (e.g. "give me everyone with this
+// surname that semantically matches my query").
+func (h *AuthorHandler) SearchWithIterator(c *gin.Context) {
+	if !checkClientA(c, h.milvus) {
+		return
+	}
+
+	query := c.Query("query")
+	lastname := c.Query("lastname")
+	if query == "" || lastname == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "query and lastname query params are required"})
+		return
+	}
+	batchSize, _ := strconv.Atoi(c.DefaultQuery("batch", "50"))
+	maxResults, _ := strconv.Atoi(c.DefaultQuery("max", "200"))
+	if batchSize <= 0 {
+		batchSize = 50
+	}
+	if maxResults <= 0 {
+		maxResults = 200
+	}
+
+	vec, err := h.embedder.Text(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed"})
+		return
+	}
+
+	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
+	ctx := safeCtxA(c)
+	expr := fmt.Sprintf("lastname == %q", lastname)
+	outputFields := []string{"id", "name", "lastname", "author_id"}
+
+	var authors []models.AuthorOut
+	for offset := 0; len(authors) < maxResults; offset += batchSize {
+		remaining := maxResults - len(authors)
+		fetch := batchSize
+		if remaining < fetch {
+			fetch = remaining
+		}
+
+		results, err := h.milvus.Search(ctx, schema.CollectionAuthors, nil,
+			expr, outputFields,
+			[]entity.Vector{entity.FloatVector(vec)},
+			"bio_vector", entity.COSINE, fetch, sp,
+			client.WithOffset(int64(offset)),
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		batch := authorSearchResult(results)
+		if len(batch) == 0 {
+			break
+		}
+		authors = append(authors, batch...)
+		if len(batch) < fetch {
+			break
+		}
+	}
+
+	c.JSON(http.StatusOK, authors)
+}
+
 func authorSearchResult(results []client.SearchResult) []models.AuthorOut {
 	var authors []models.AuthorOut
 	if len(results) == 0 {
@@ -383,4 +452,3 @@ func authorSearchResult(results []client.SearchResult) []models.AuthorOut {
 	}
 	return authors
 }
-

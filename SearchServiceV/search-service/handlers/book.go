@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
@@ -380,8 +379,12 @@ func (h *BookHandler) SearchFiltered(c *gin.Context) {
 	c.JSON(http.StatusOK, bookSearchResult(results))
 }
 
-// GET /queries/books/hybrid?query=animal&text=farm&top_k=10
-// Complex query: vector search followed by application-level text filtering.
+// GET /queries/books/hybrid?query=dystopian+future&text=war&author=George%20Orwell&top_k=10
+//
+// True hybrid search: embeds query and text independently into two separate
+// vectors, runs two vector searches both filtered by author, then merges
+// results keeping the best score per id. isbn is excluded — it is an opaque
+// identifier, not a semantic field.
 func (h *BookHandler) HybridSearch(c *gin.Context) {
 	if !checkClient(c, h.milvus) {
 		return
@@ -389,37 +392,144 @@ func (h *BookHandler) HybridSearch(c *gin.Context) {
 
 	query := c.Query("query")
 	text := c.Query("text")
-	if query == "" || text == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query and text query params are required"})
+	author := c.Query("author")
+	if query == "" || text == "" || author == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "query, text and author query params are required"})
 		return
 	}
 	topK, _ := strconv.Atoi(c.DefaultQuery("top_k", "10"))
+
+	// Embed query and text independently — two separate vector representations.
+	queryVec, err := h.embedder.Text(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed for query"})
+		return
+	}
+	textVec, err := h.embedder.Text(text)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed for text"})
+		return
+	}
+
+	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
+	ctx := safeCtx(c)
+	outputFields := []string{"id", "isbn", "title", "author"}
+	expr := fmt.Sprintf("author == %q", author)
+
+	// First pass: primary query vector filtered by author.
+	res1, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
+		expr, outputFields,
+		[]entity.Vector{entity.FloatVector(queryVec)},
+		"title_vector", entity.COSINE, topK*2, sp)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "primary search failed: " + err.Error()})
+		return
+	}
+
+	// Second pass: secondary text vector, same author filter.
+	res2, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
+		expr, outputFields,
+		[]entity.Vector{entity.FloatVector(textVec)},
+		"title_vector", entity.COSINE, topK*2, sp)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "secondary search failed: " + err.Error()})
+		return
+	}
+
+	// Merge: keep highest score per id.
+	scoreMap := make(map[int64]models.BookOut)
+	for _, res := range [][]client.SearchResult{res1, res2} {
+		for _, b := range bookSearchResult(res) {
+			if existing, seen := scoreMap[b.ID]; !seen || b.Score > existing.Score {
+				scoreMap[b.ID] = b
+			}
+		}
+	}
+
+	// Collect and insertion-sort descending by score, trim to topK.
+	merged := make([]models.BookOut, 0, len(scoreMap))
+	for _, b := range scoreMap {
+		merged = append(merged, b)
+	}
+	for i := 1; i < len(merged); i++ {
+		for j := i; j > 0 && merged[j].Score > merged[j-1].Score; j-- {
+			merged[j], merged[j-1] = merged[j-1], merged[j]
+		}
+	}
+	if len(merged) > topK {
+		merged = merged[:topK]
+	}
+
+	c.JSON(http.StatusOK, merged)
+}
+
+// GET /queries/books/search-iterator?query=science+fiction&author=Isaac%20Asimov&batch=50&max=200
+//
+// Vector search with a scalar filter (author) iterated via offset pagination,
+// collecting results in batch-sized pages up to max total. This gives full
+// access to the filtered result space without a hard top_k cap.
+// isbn is excluded — identifier only.
+func (h *BookHandler) SearchWithIterator(c *gin.Context) {
+	if !checkClient(c, h.milvus) {
+		return
+	}
+
+	query := c.Query("query")
+	author := c.Query("author")
+	if query == "" || author == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "query and author query params are required"})
+		return
+	}
+	batchSize, _ := strconv.Atoi(c.DefaultQuery("batch", "50"))
+	maxResults, _ := strconv.Atoi(c.DefaultQuery("max", "200"))
+	if batchSize <= 0 {
+		batchSize = 50
+	}
+	if maxResults <= 0 {
+		maxResults = 200
+	}
+
 	vec, err := h.embedder.Text(query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed"})
 		return
 	}
+
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
 	ctx := safeCtx(c)
-	results, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
-		"", []string{"id", "isbn", "title", "author"},
-		[]entity.Vector{entity.FloatVector(vec)}, "title_vector", entity.COSINE, topK*3, sp)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	books := bookSearchResult(results)
-	filtered := make([]models.BookOut, 0)
-	needle := strings.ToLower(text)
-	for _, b := range books {
-		if strings.Contains(strings.ToLower(b.Title), needle) || strings.Contains(strings.ToLower(b.Author), needle) {
-			filtered = append(filtered, b)
+	expr := fmt.Sprintf("author == %q", author)
+	outputFields := []string{"id", "isbn", "title", "author"}
+
+	var books []models.BookOut
+	for offset := 0; len(books) < maxResults; offset += batchSize {
+		remaining := maxResults - len(books)
+		fetch := batchSize
+		if remaining < fetch {
+			fetch = remaining
 		}
-		if len(filtered) >= topK {
+
+		results, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
+			expr, outputFields,
+			[]entity.Vector{entity.FloatVector(vec)},
+			"title_vector", entity.COSINE, fetch, sp,
+			client.WithOffset(int64(offset)),
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		batch := bookSearchResult(results)
+		if len(batch) == 0 {
 			break
 		}
+		books = append(books, batch...)
+		if len(batch) < fetch {
+			break // exhausted
+		}
 	}
-	c.JSON(http.StatusOK, filtered)
+
+	c.JSON(http.StatusOK, books)
 }
 
 func bookSearchResult(results []client.SearchResult) []models.BookOut {
@@ -440,4 +550,3 @@ func bookSearchResult(results []client.SearchResult) []models.BookOut {
 	}
 	return books
 }
-

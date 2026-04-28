@@ -74,6 +74,8 @@ func main() {
 		queries.GET("/books/hybrid", bookHandler.HybridSearch)
 		queries.GET("/authors/by-author-id", authorHandler.ByAuthorID)
 		queries.GET("/authors/search-filtered", authorHandler.SearchFiltered)
+		queries.GET("/authors/search-iterator", authorHandler.SearchWithIterator)
+		queries.GET("/books/search-iterator", bookHandler.SearchWithIterator)
 	}
 
 	log.Printf("search-service listening on :%s", cfg.ServerPort)
