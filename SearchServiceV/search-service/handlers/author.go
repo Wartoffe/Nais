@@ -61,7 +61,7 @@ func (h *AuthorHandler) Create(c *gin.Context) {
 		return
 	}
 
-	vec, err := h.embedder.Text(in.Name + " " + in.Lastname)
+	vec, err := h.embedder.Text(in.Name + " " + in.Lastname + " " + in.Country)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed: " + err.Error()})
 		return
@@ -71,6 +71,7 @@ func (h *AuthorHandler) Create(c *gin.Context) {
 		entity.NewColumnVarChar("name", []string{in.Name}),
 		entity.NewColumnVarChar("lastname", []string{in.Lastname}),
 		entity.NewColumnVarChar("author_id", []string{in.AuthorID}),
+		entity.NewColumnVarChar("country", []string{in.Country}),
 		entity.NewColumnFloatVector("bio_vector", schema.VectorDim, [][]float32{vec}),
 	)
 	if err != nil {
@@ -91,7 +92,7 @@ func (h *AuthorHandler) List(c *gin.Context) {
 
 	ctx := safeCtxA(c)
 	results, err := h.milvus.Query(ctx, schema.CollectionAuthors, nil,
-		"id > 0", []string{"id", "name", "lastname", "author_id"},
+		"id > 0", []string{"id", "name", "lastname", "author_id", "country"},
 		client.WithLimit(int64(limit)),
 		client.WithOffset(int64(offset)),
 	)
@@ -117,7 +118,7 @@ func (h *AuthorHandler) Get(c *gin.Context) {
 	ctx := safeCtxA(c)
 	results, err := h.milvus.QueryByPks(ctx, schema.CollectionAuthors, nil,
 		entity.NewColumnInt64("id", []int64{id}),
-		[]string{"id", "name", "lastname", "author_id"},
+		[]string{"id", "name", "lastname", "author_id", "country"},
 	)
 	if err != nil || len(results) == 0 || results[0].Len() == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("author %d not found", id)})
@@ -148,7 +149,7 @@ func (h *AuthorHandler) Update(c *gin.Context) {
 	ctx := safeCtxA(c)
 	existing, err := h.milvus.QueryByPks(ctx, schema.CollectionAuthors, nil,
 		entity.NewColumnInt64("id", []int64{id}),
-		[]string{"id", "name", "lastname", "author_id"},
+		[]string{"id", "name", "lastname", "author_id", "country"},
 	)
 	if err != nil || len(existing) == 0 || existing[0].Len() == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("author %d not found", id)})
@@ -168,6 +169,7 @@ func (h *AuthorHandler) Update(c *gin.Context) {
 	newName := current.Name
 	newLast := current.Lastname
 	newAID := current.AuthorID
+	newCountry := current.Country
 	if upd.Name != nil {
 		newName = *upd.Name
 	}
@@ -177,8 +179,11 @@ func (h *AuthorHandler) Update(c *gin.Context) {
 	if upd.AuthorID != nil {
 		newAID = *upd.AuthorID
 	}
+	if upd.Country != nil {
+		newCountry = *upd.Country
+	}
 
-	vec, err := h.embedder.Text(newName + " " + newLast)
+	vec, err := h.embedder.Text(newName + " " + newLast + " " + newCountry)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed"})
 		return
@@ -193,6 +198,7 @@ func (h *AuthorHandler) Update(c *gin.Context) {
 		entity.NewColumnVarChar("name", []string{newName}),
 		entity.NewColumnVarChar("lastname", []string{newLast}),
 		entity.NewColumnVarChar("author_id", []string{newAID}),
+		entity.NewColumnVarChar("country", []string{newCountry}),
 		entity.NewColumnFloatVector("bio_vector", schema.VectorDim, [][]float32{vec}),
 	)
 	if err != nil {
@@ -258,7 +264,7 @@ func (h *AuthorHandler) Search(c *gin.Context) {
 	}
 
 	results, err := h.milvus.Search(ctx, schema.CollectionAuthors, nil,
-		"", []string{"id", "name", "lastname", "author_id"},
+		"", []string{"id", "name", "lastname", "author_id", "country"},
 		[]entity.Vector{entity.FloatVector(vec)},
 		"bio_vector",
 		entity.COSINE,
@@ -277,16 +283,19 @@ func (h *AuthorHandler) Search(c *gin.Context) {
 		nameCol := results[0].Fields.GetColumn("name")
 		lastCol := results[0].Fields.GetColumn("lastname")
 		aidCol := results[0].Fields.GetColumn("author_id")
+		countryCol := results[0].Fields.GetColumn("country")
 
 		for i := range ids {
 			name, _ := nameCol.(*entity.ColumnVarChar).ValueByIdx(i)
 			lastname, _ := lastCol.(*entity.ColumnVarChar).ValueByIdx(i)
 			aid, _ := aidCol.(*entity.ColumnVarChar).ValueByIdx(i)
+			country, _ := countryCol.(*entity.ColumnVarChar).ValueByIdx(i)
 			authors = append(authors, models.AuthorOut{
 				ID:       ids[i],
 				Name:     name,
 				Lastname: lastname,
 				AuthorID: aid,
+				Country:  country,
 				Score:    scores[i],
 			})
 		}
@@ -321,6 +330,10 @@ func colsToAuthors(cols []entity.Column) []models.AuthorOut {
 			for i := 0; i < n; i++ {
 				authors[i].AuthorID, _ = col.(*entity.ColumnVarChar).ValueByIdx(i)
 			}
+		case "country":
+			for i := 0; i < n; i++ {
+				authors[i].Country, _ = col.(*entity.ColumnVarChar).ValueByIdx(i)
+			}
 		}
 	}
 	return authors
@@ -339,7 +352,7 @@ func (h *AuthorHandler) ByAuthorID(c *gin.Context) {
 	}
 	expr := fmt.Sprintf("author_id == %q", authorID)
 	ctx := safeCtxA(c)
-	results, err := h.milvus.Query(ctx, schema.CollectionAuthors, nil, expr, []string{"id", "name", "lastname", "author_id"}, client.WithLimit(10))
+	results, err := h.milvus.Query(ctx, schema.CollectionAuthors, nil, expr, []string{"id", "name", "lastname", "author_id", "country"}, client.WithLimit(10))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -371,7 +384,7 @@ func (h *AuthorHandler) SearchFiltered(c *gin.Context) {
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
 	ctx := safeCtxA(c)
 	results, err := h.milvus.Search(ctx, schema.CollectionAuthors, nil,
-		expr, []string{"id", "name", "lastname", "author_id"},
+		expr, []string{"id", "name", "lastname", "author_id", "country"},
 		[]entity.Vector{entity.FloatVector(vec)}, "bio_vector", entity.COSINE, topK, sp)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -416,7 +429,7 @@ func (h *AuthorHandler) SearchWithIterator(c *gin.Context) {
 	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
 	ctx := safeCtxA(c)
 	expr := fmt.Sprintf("lastname == %q", lastname)
-	outputFields := []string{"id", "name", "lastname", "author_id"}
+	outputFields := []string{"id", "name", "lastname", "author_id", "country"}
 
 	var authors []models.AuthorOut
 	for offset := 0; len(authors) < maxResults; offset += batchSize {
@@ -460,11 +473,13 @@ func authorSearchResult(results []client.SearchResult) []models.AuthorOut {
 	nameCol := results[0].Fields.GetColumn("name")
 	lastCol := results[0].Fields.GetColumn("lastname")
 	aidCol := results[0].Fields.GetColumn("author_id")
+	countryCol := results[0].Fields.GetColumn("country")
 	for i := range ids {
 		name, _ := nameCol.(*entity.ColumnVarChar).ValueByIdx(i)
 		lastname, _ := lastCol.(*entity.ColumnVarChar).ValueByIdx(i)
 		aid, _ := aidCol.(*entity.ColumnVarChar).ValueByIdx(i)
-		authors = append(authors, models.AuthorOut{ID: ids[i], Name: name, Lastname: lastname, AuthorID: aid, Score: scores[i]})
+		country, _ := countryCol.(*entity.ColumnVarChar).ValueByIdx(i)
+		authors = append(authors, models.AuthorOut{ID: ids[i], Name: name, Lastname: lastname, AuthorID: aid, Country: country, Score: scores[i]})
 	}
 	return authors
 }

@@ -61,16 +61,18 @@ func seedAuthors(ctx context.Context, c client.Client, e *embed.Client) error {
 	names := make([]string, 0, len(Authors))
 	lastnames := make([]string, 0, len(Authors))
 	authorIDs := make([]string, 0, len(Authors))
+	countries := make([]string, 0, len(Authors))
 	vectors := make([][]float32, 0, len(Authors))
 
 	for _, a := range Authors {
-		vec, err := e.Text(a[0] + " " + a[1] + " author writer literature")
+		vec, err := e.Text(a[0] + " " + a[1] + " author writer literature " + a[3])
 		if err != nil {
 			return fmt.Errorf("embed author %s %s: %w", a[0], a[1], err)
 		}
 		names = append(names, a[0])
 		lastnames = append(lastnames, a[1])
 		authorIDs = append(authorIDs, a[2])
+		countries = append(countries, a[3])
 		vectors = append(vectors, vec)
 	}
 
@@ -78,6 +80,7 @@ func seedAuthors(ctx context.Context, c client.Client, e *embed.Client) error {
 		entity.NewColumnVarChar("name", names),
 		entity.NewColumnVarChar("lastname", lastnames),
 		entity.NewColumnVarChar("author_id", authorIDs),
+		entity.NewColumnVarChar("country", countries),
 		entity.NewColumnFloatVector("bio_vector", schema.VectorDim, vectors),
 	)
 	if err != nil {

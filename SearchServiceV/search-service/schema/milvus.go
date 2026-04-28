@@ -43,6 +43,7 @@ func AuthorSchema() *entity.Schema {
 			{Name: "name", DataType: entity.FieldTypeVarChar, TypeParams: map[string]string{entity.TypeParamMaxLength: "256"}},
 			{Name: "lastname", DataType: entity.FieldTypeVarChar, TypeParams: map[string]string{entity.TypeParamMaxLength: "256"}},
 			{Name: "author_id", DataType: entity.FieldTypeVarChar, TypeParams: map[string]string{entity.TypeParamMaxLength: "64"}},
+			{Name: "country", DataType: entity.FieldTypeVarChar, TypeParams: map[string]string{entity.TypeParamMaxLength: "128"}},
 			{Name: "bio_vector", DataType: entity.FieldTypeFloatVector, TypeParams: map[string]string{entity.TypeParamDim: "768"}},
 		},
 	}
