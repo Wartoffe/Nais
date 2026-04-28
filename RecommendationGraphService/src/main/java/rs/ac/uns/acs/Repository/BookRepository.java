@@ -32,7 +32,7 @@ public interface BookRepository extends Neo4jRepository<Book, String> {
             MATCH (b:Book) WHERE b.id IN m.bookHistory
             MATCH (b)-[s:SIMILAR_TO]->(rec:Book)
             WHERE NOT rec.id IN m.bookHistory
-            WITH rec, COUNT(s) AS similarityScore
+            WITH rec, COUNT(s.score) AS similarityScore
             RETURN rec
             ORDER BY similarityScore DESC
             """)
