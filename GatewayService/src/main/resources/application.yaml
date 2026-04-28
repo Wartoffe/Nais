@@ -30,4 +30,10 @@ spring:
           filters:
             - StripPrefix=1
         
+        - id: graph-database-service
+          uri: lb://graph-database-service
+          predicates:
+            - Path=/graph-database-service/**
+          filters:
+            - StripPrefix=1
 

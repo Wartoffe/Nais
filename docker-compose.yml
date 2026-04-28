@@ -1,6 +1,25 @@
 version: "3.8"
 
 services:
+  graph-database-service:
+   build:
+     context: ./GraphDatabaseService
+     dockerfile: Dockerfile
+   image: graph-database-service:latest
+   ports:
+     - "9050:9050"
+   environment:
+     EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+     SPRING_NEO4J_URI: bolt://neo4j:7687
+     SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+     SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
+     SERVER_PORT: 9050
+   depends_on:
+     neo4j:
+       condition: service_healthy
+     eureka-server:
+       condition: service_started
+   restart: on-failure
   #
   # ── Service Discovery ─────────────────────────────────────────────────────
   #
