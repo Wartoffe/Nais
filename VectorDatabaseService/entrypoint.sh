@@ -29,12 +29,12 @@ OLLAMA_URL="${OLLAMA_URL:-http://ollama:11434}"
   fi
 
   echo ">>> [1/3] Running books RAG ingestion (skipped if already done)..."
-  sleep 30 
+  sleep 45 
   # Executes a Python module to process and load books data into the database for RAG (Retrieval-Augmented Generation)
   python -m ingest.books_ingest || echo ">>> WARNING: books ingest failed, continuing..."
 
   echo ">>> [2/3] Running book reviews ingestion (skipped if already done)..."
-  sleep 60
+  sleep 90
   # Executes a Python module to process and load book reviews data into the database
   python -m ingest.reviews_ingest || echo ">>> WARNING: reviews ingest failed, continuing..."
 
