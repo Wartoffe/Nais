@@ -26,6 +26,30 @@ func main() {
 	}
 	defer milvusClient.Close()
 
+	// ── Ensure library_cluster database exists and switch to it ──────────────
+	dbs, err := milvusClient.ListDatabases(context.Background())
+	if err != nil {
+		log.Fatalf("failed to list Milvus databases: %v", err)
+	}
+	found := false
+	for _, db := range dbs {
+		if db.Name == schema.ClusterDBName {
+			found = true
+			break
+		}
+	}
+	if !found {
+		if err := milvusClient.CreateDatabase(context.Background(), schema.ClusterDBName); err != nil {
+			log.Fatalf("failed to create database %s: %v", schema.ClusterDBName, err)
+		}
+		log.Printf("created Milvus database: %s", schema.ClusterDBName)
+	}
+	if err := milvusClient.UsingDatabase(context.Background(), schema.ClusterDBName); err != nil {
+		log.Fatalf("failed to switch to database %s: %v", schema.ClusterDBName, err)
+	}
+	log.Printf("using Milvus database: %s", schema.ClusterDBName)
+	// ─────────────────────────────────────────────────────────────────────────
+
 	embedder := embed.New(cfg.OllamaURL, cfg.OllamaModel)
 	if err := embedder.WaitReady(5, 2*time.Second); err != nil {
 		log.Printf("warning: %v; using local deterministic fallback embeddings until Ollama is available", err)
