@@ -29,9 +29,7 @@ public class BookService {
         bookRepository.addGenreToBook(bookId, genreId);
     }
 
-    public void createSimilarity() {
-        bookRepository.createSimilarityByGenre();
-    }
+
 
     public List<Book> recommendByGenre(Long memberId) {
         return bookRepository.recommendByGenre(memberId);

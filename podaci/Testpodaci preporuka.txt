@@ -1,0 +1,62 @@
+CREATE (a1:Author {id: 1, firstName: 'Ivo', lastName: 'Andric'})
+CREATE (a2:Author {id: 2, firstName: 'Meša', lastName: 'Selimović'})
+CREATE (a3:Author {id: 3, firstName: 'Branko', lastName: 'Ćopić'})
+CREATE (a4:Author {id: 4, firstName: 'Dobrica', lastName: 'Ćosić'})
+
+CREATE (g1:Genre {id: 1, name: 'Drama'})
+CREATE (g2:Genre {id: 2, name: 'Historical Fiction'})
+CREATE (g3:Genre {id: 3, name: 'Comedy'})
+CREATE (g4:Genre {id: 4, name: 'War'})
+
+CREATE (b1:Book {id: 'b1', title: 'Na Drini cuprija'})
+CREATE (b2:Book {id: 'b2', title: 'Prokleta avlija'})
+CREATE (b3:Book {id: 'b3', title: 'Derviš i smrt'})
+CREATE (b4:Book {id: 'b4', title: 'Tvrđava'})
+CREATE (b5:Book {id: 'b5', title: 'Doživljaji Nikoletine Bursaća'})
+CREATE (b6:Book {id: 'b6', title: 'Ježeva kućica'})
+CREATE (b7:Book {id: 'b7', title: 'Daleko je sunce'})
+CREATE (b8:Book {id: 'b8', title: 'Vreme smrti'})
+
+CREATE (m1:Member {id: 1, firstName: 'Sara', lastName: 'Test', age: 22})
+CREATE (m2:Member {id: 2, firstName: 'Marko', lastName: 'Petrović', age: 30})
+CREATE (m3:Member {id: 3, firstName: 'Jelena', lastName: 'Nikolić', age: 25})
+CREATE (m4:Member {id: 4, firstName: 'Nikola', lastName: 'Jovanović', age: 35})
+
+// Books -> Genres
+CREATE (b1)-[:BELONGS_TO]->(g1)
+CREATE (b2)-[:BELONGS_TO]->(g1)
+CREATE (b3)-[:BELONGS_TO]->(g1)
+CREATE (b4)-[:BELONGS_TO]->(g2)
+CREATE (b5)-[:BELONGS_TO]->(g3)
+CREATE (b6)-[:BELONGS_TO]->(g3)
+CREATE (b7)-[:BELONGS_TO]->(g4)
+CREATE (b8)-[:BELONGS_TO]->(g4)
+
+// Books -> Authors
+CREATE (b1)-[:WRITTEN_BY]->(a1)
+CREATE (b2)-[:WRITTEN_BY]->(a1)
+CREATE (b3)-[:WRITTEN_BY]->(a2)
+CREATE (b4)-[:WRITTEN_BY]->(a2)
+CREATE (b5)-[:WRITTEN_BY]->(a3)
+CREATE (b6)-[:WRITTEN_BY]->(a3)
+CREATE (b7)-[:WRITTEN_BY]->(a4)
+CREATE (b8)-[:WRITTEN_BY]->(a4)
+
+// Members borrow books
+CREATE (m1)-[:BORROWED {date: date('2024-01-01')}]->(b1)
+CREATE (m1)-[:BORROWED {date: date('2024-02-01')}]->(b3)
+CREATE (m2)-[:BORROWED {date: date('2024-01-15')}]->(b4)
+CREATE (m2)-[:BORROWED {date: date('2024-03-10')}]->(b7)
+CREATE (m3)-[:BORROWED {date: date('2024-02-20')}]->(b5)
+CREATE (m3)-[:BORROWED {date: date('2024-04-05')}]->(b6)
+CREATE (m4)-[:BORROWED {date: date('2024-01-30')}]->(b2)
+CREATE (m4)-[:BORROWED {date: date('2024-03-25')}]->(b8)
+
+MATCH (m:Member {id: 1})
+SET m.bookHistory = ["b1", "b3"]
+MATCH (m:Member {id: 2})
+SET m.bookHistory = ["b4", "b7"]
+MATCH (m:Member {id: 3})
+SET m.bookHistory = ["b5", "b6"]
+MATCH (m:Member {id: 4})
+SET m.bookHistory = ["b2", "b8"]
