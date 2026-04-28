@@ -178,7 +178,44 @@ services:
       - vector-database-service
     restart: on-failure
 
+  neo4j:
+    image: neo4j:latest
+    ports:
+      - "7474:7474"   
+      - "7687:7687"   
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  app:
+    build:
+      context: ./RecommendationGraphService
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    restart: on-failure
+
 # ── Named volumes ───────────────────────────────────────────────────────────
 
 volumes:
   ollama_data: {}
+  neo4j_data:
+  neo4j_logs:
