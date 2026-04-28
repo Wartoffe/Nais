@@ -17,25 +17,25 @@ public class TrendController {
         this.trendService = trendService;
     }
 
-    // READ
+    // CVOR READ
     @GetMapping
     public ResponseEntity<List<Trend>> findAll() {
         return ResponseEntity.ok(trendService.findAll());
     }
 
-    // READ
+    // CVOR READ
     @GetMapping("/{naziv}")
     public ResponseEntity<Trend> findById(@PathVariable String naziv) {
         return ResponseEntity.ok(trendService.findById(naziv));
     }
 
-    // CREATE
+    // CVOR CREATE
     @PostMapping
     public ResponseEntity<Trend> create(@RequestBody Trend trend) {
         return ResponseEntity.ok(trendService.create(trend));
     }
 
-    // UPDATE
+    // CVOR UPDATE
     @PutMapping("/{naziv}")
     public ResponseEntity<Trend> azuriraj(
             @PathVariable String naziv,
@@ -44,7 +44,7 @@ public class TrendController {
         return ResponseEntity.ok(trendService.azuriraj(naziv, score, period));
     }
 
-    // DELETE
+    // CVOR DELETE
     @DeleteMapping("/{naziv}")
     public ResponseEntity<Void> delete(@PathVariable String naziv) {
         trendService.delete(naziv);

@@ -7,8 +7,7 @@ import java.util.List;
 public class Knjiga {
 
     @Id
-    private String isbn; // isbn je prirodni ID
-
+    private String isbn;
     private String naziv;
     private String autor;
     private Integer godinaIzdavanja;

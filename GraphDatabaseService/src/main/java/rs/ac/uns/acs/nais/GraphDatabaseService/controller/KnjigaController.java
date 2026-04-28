@@ -7,7 +7,9 @@ import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 import rs.ac.uns.acs.nais.GraphDatabaseService.service.IKnjigaService;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
-
+import rs.ac.uns.acs.nais.GraphDatabaseService.service.KnjigaService;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TrendDTO;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KnjigaTrendDTO;
 import java.util.List;
 import java.util.Map;
 
@@ -21,31 +23,31 @@ public class KnjigaController {
         this.knjigaService = knjigaService;
     }
 
-    // READ
+    //CVOR READ
     @GetMapping
     public ResponseEntity<List<Knjiga>> findAll() {
         return ResponseEntity.ok(knjigaService.findAll());
     }
 
-    // READ
+    //CVOR READ
     @GetMapping("/{isbn}")
     public ResponseEntity<Knjiga> findById(@PathVariable String isbn) {
         return ResponseEntity.ok(knjigaService.findById(isbn));
     }
 
-    // CREATE
+    //CVOR CREATE
     @PostMapping
     public ResponseEntity<Knjiga> create(@RequestBody Knjiga knjiga) {
         return ResponseEntity.ok(knjigaService.create(knjiga));
     }
 
-    // UPDATE
+    //CVOR UPDATE
     @PutMapping("/{isbn}")
     public ResponseEntity<Knjiga> update(@PathVariable String isbn, @RequestBody Knjiga knjiga) {
         return ResponseEntity.ok(knjigaService.update(isbn, knjiga));
     }
 
-    // DELETE
+    //CVOR DELETE
     @DeleteMapping("/{isbn}")
     public ResponseEntity<Void> delete(@PathVariable String isbn) {
         knjigaService.delete(isbn);
@@ -90,6 +92,34 @@ public class KnjigaController {
     @GetMapping("/top3")
     public List<TopKnjigaDTO> getTop3NajtrazenijeKnjige() {
         return knjigaService.nadjiTop3Najtrazenije();
+    }
+
+
+    //GRANA "JE TREND" CREATE / UPDATE
+    @PostMapping("je-trend")
+    public void dodajJeTrend(@RequestParam String isbn,
+                         @RequestParam String naziv,
+                         @RequestParam Double score) {
+        knjigaService.dodajIliAzurirajJeTrend(isbn, naziv, score);
+    }
+
+    //GRANA "JE TREND" DELETE
+    @DeleteMapping("je-trend")
+    public void obrisiJeTrend(@RequestParam String isbn,
+                            @RequestParam String naziv) {
+        knjigaService.obrisiJeTrend(isbn, naziv);
+    }
+
+    //GRANA "JE TREND" READ: trendovi za knjigu
+    @GetMapping("/trendovi-za/{isbn}")
+    public List<TrendDTO> nadjiTrendoviZaKnjigu(@PathVariable String isbn) {
+        return knjigaService.nadjiTrendovePoKnjizi(isbn);
+    }
+
+    //GRANA "JE TREND" READ: knjige za trend
+    @GetMapping("/knjige-za/{naziv}")
+    public List<KnjigaTrendDTO> nadjiKnjigeZaTrend(@PathVariable String naziv) {
+        return knjigaService.nadjiKnjigePoTrendu(naziv);
     }
 
 }

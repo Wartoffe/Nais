@@ -1,8 +1,6 @@
 package rs.ac.uns.acs.nais.GraphDatabaseService.service;
 
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TopKnjigaDTO;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.*;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 
 import java.util.List;
@@ -21,5 +19,8 @@ public interface IKnjigaService {
     List<ZanrTrendDTO> topZanroviPoTrendu(Double minRelevantnost);
     List<KorisnikZanrDTO> korisniciBrojZahtevaPoZanru();
     List<TopKnjigaDTO> nadjiTop3Najtrazenije();
-
+    void dodajIliAzurirajJeTrend(String isbn, String naziv, Double score);
+    void obrisiJeTrend(String isbn, String naziv);
+    List<TrendDTO> nadjiTrendovePoKnjizi(String isbn);
+    List<KnjigaTrendDTO> nadjiKnjigePoTrendu(String naziv);
 }

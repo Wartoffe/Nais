@@ -4,18 +4,20 @@ import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TopKnjigaDTO;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.*;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZahtevDTO;
+
 import java.util.List;
 
 @Repository
 public interface KnjigaRepository extends Neo4jRepository<Knjiga, String> {
 
-    // UPIT 1 : Dodaj ili azuriraj zahtev korisnika za knjigu
-    // Ako veza postoji, uvecam brojZahteva; ako ne postoji, kreiram je
+    //---------------------------------------------------------------------------------------------------
+    //SLOZENI UPITI
+
+
+    // UPIT 1 : Dodaj ili azuriraj zahtev korisnika za knjigu : Ako veza postoji, uvecam brojZahteva; ako ne postoji, kreiram je
+    // Takodje deo crud operacija za zainteresovan_za (create i update)
     @Query("""
         MATCH (u:Korisnik {email: $email})
         MATCH (k:Knjiga {isbn: $isbn})
@@ -82,19 +84,61 @@ public interface KnjigaRepository extends Neo4jRepository<Knjiga, String> {
     """)
     List<TopKnjigaDTO> nadjiTop3NajtrazenijeKnjige();
 
-    //obrisi bilo koji zahtev
+
+
+    // --------------------------------------------------------------------------------------------------------------
+    //ZAINTERESOVAN_ZA CRUD operacije
+
+    //DELETE: obrisi bilo koji zahtev
     @Query("""
     MATCH (k:Korisnik {email: $email})-[z:ZAINTERESOVAN_ZA]->(knj:Knjiga {isbn: $isbn})
     DELETE z
 """)
     void obrisiZahtev(String email, String isbn);
 
-    //ispisuje podatke o knjizi i vezi "zainteresovan" trazenog korisnika
+    //READ: ispisuje podatke o knjizi i vezi "zainteresovan za" trazenog korisnika
     @Query("""
     MATCH (k:Korisnik {email: $email})-[z:ZAINTERESOVAN_ZA]->(knj:Knjiga)
     RETURN knj.naziv AS naziv, knj.isbn AS isbn, z.brojZahteva AS brojZahteva
 """)
     List<ZahtevDTO> findZahteviByKorisnik(String email);
 
+
+
+    // --------------------------------------------------------------------------------------------------------------
+    //JE_TREND CRUD operacije
+
+    //CREATE/UPDATE
+    @Query("""
+        MATCH (k:Knjiga {isbn: $isbn})
+        MATCH (t:Trend {naziv: $naziv})
+        MERGE (k)-[r:JE_TREND]->(t)
+        SET r.relevantnostScore = $score
+    """)
+    void dodajIliAzurirajJeTrend(String isbn, String naziv, Double score);
+
+    // DELETE
+    @Query("""
+        MATCH (k:Knjiga {isbn: $isbn})-[r:JE_TREND]->(t:Trend {naziv: $naziv})
+        DELETE r
+    """)
+    void obrisiJeTrend(String isbn, String naziv);
+
+    // READ po knjizi
+    @Query("""
+        MATCH (k:Knjiga {isbn: $isbn})-[r:JE_TREND]->(t:Trend)
+        RETURN t.naziv AS naziv, t.period AS period, 
+               r.relevantnostScore AS score
+    """)
+    List<TrendDTO> nadjiTrendovePoKnjizi(String isbn);
+
+    // READ po trendu
+    @Query("""
+        MATCH (k:Knjiga)-[r:JE_TREND]->(t:Trend {naziv: $naziv})
+        RETURN k.naziv AS nazivKnjige, k.isbn AS isbn,
+               r.relevantnostScore AS score
+        ORDER BY score DESC
+    """)
+    List<KnjigaTrendDTO> nadjiKnjigePoTrendu(String naziv);
 
 }

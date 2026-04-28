@@ -16,21 +16,21 @@ public class ZahtevController {
         this.service = service;
     }
 
-    //GRSNA CREATE
+    //GRANA "ZAINTERESOVAN ZA" CREATE
     @PostMapping
     public void dodajZahtev(@RequestParam String email,
                             @RequestParam String isbn) {
         service.dodajZahtev(email, isbn);
     }
 
-    //GRANA DELETE
+    //GRANA "ZAINTERESOVAN ZA" DELETE
     @DeleteMapping
     public void obrisiZahtev(@RequestParam String email,
                              @RequestParam String isbn) {
         service.obrisiZahtev(email, isbn);
     }
 
-    //GRANA READ
+    //GRANA "ZAINTERESOVAN ZA" READ
     @GetMapping("/{email}")
     public List<ZahtevDTO> getZahtevi(@PathVariable String email) {
         return service.getZahtevi(email);

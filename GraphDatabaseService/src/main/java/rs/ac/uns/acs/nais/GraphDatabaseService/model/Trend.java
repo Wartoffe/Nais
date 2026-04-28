@@ -6,11 +6,9 @@ import org.springframework.data.neo4j.core.schema.*;
 public class Trend {
 
     @Id
-    private String naziv; // naziv je prirodni ID (npr. "BookTok")
-
-    private String period;  // npr. "2024-Q1"
-    private Integer score;  // 0-100
-
+    private String naziv;
+    private String period;
+    private Integer score;
     public Trend() {}
 
     public String getNaziv() { return naziv; }
