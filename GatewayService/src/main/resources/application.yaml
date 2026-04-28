@@ -22,5 +22,12 @@ spring:
             - Path=/vector-database-service/**
           filters:
             - StripPrefix=1
+
+        - id: recommendation-graph-service
+          uri: lb://recommendationgraphservice
+          predicates:
+            - Path=/recommendation-graph-service/**
+          filters:
+            - StripPrefix=1
         
 
