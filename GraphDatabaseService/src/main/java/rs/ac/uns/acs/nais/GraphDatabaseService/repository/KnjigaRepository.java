@@ -141,4 +141,33 @@ public interface KnjigaRepository extends Neo4jRepository<Knjiga, String> {
     """)
     List<KnjigaTrendDTO> nadjiKnjigePoTrendu(String naziv);
 
+
+    // --------------------------------------------------------------------------------------------------------------
+    //PRIPADA CRUD operacije
+
+    //CREATE
+    @Query("""
+    MATCH (k:Knjiga {isbn: $isbn})
+    OPTIONAL MATCH (k)-[r:PRIPADA]->(:Zanr)
+    DELETE r
+    WITH k
+    MATCH (z:Zanr {naziv: $naziv})
+    MERGE (k)-[:PRIPADA]->(z)
+    """)
+    void setZanrForKnjiga(String isbn, String naziv);
+
+    //DELETE
+    @Query("""
+    MATCH (k:Knjiga {isbn: $isbn})-[r:PRIPADA]->(:Zanr)
+    DELETE r
+    """)
+    void removeZanrFromKnjiga(String isbn);
+
+    //READ
+    @Query("""
+    MATCH (k:Knjiga {isbn: $isbn})-[:PRIPADA]->(z:Zanr)
+    RETURN z.naziv AS naziv, z.opis AS opis
+    """)
+    ZanrDTO getZanrByKnjiga(String isbn);
+
 }

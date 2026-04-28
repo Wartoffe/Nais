@@ -2,14 +2,11 @@ package rs.ac.uns.acs.nais.GraphDatabaseService.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TopKnjigaDTO;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.*;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 import rs.ac.uns.acs.nais.GraphDatabaseService.service.IKnjigaService;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
 import rs.ac.uns.acs.nais.GraphDatabaseService.service.KnjigaService;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.TrendDTO;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KnjigaTrendDTO;
+
 import java.util.List;
 import java.util.Map;
 
@@ -120,6 +117,25 @@ public class KnjigaController {
     @GetMapping("/knjige-za/{naziv}")
     public List<KnjigaTrendDTO> nadjiKnjigeZaTrend(@PathVariable String naziv) {
         return knjigaService.nadjiKnjigePoTrendu(naziv);
+    }
+
+    //GRANA "PRIPADA" CREATE
+    @PostMapping("zanr")
+    public void setZanr(@RequestParam String isbn,
+                        @RequestParam String naziv) {
+        knjigaService.setZanrForKnjiga(isbn, naziv);
+    }
+
+    //GRANA "PRIPADA" DELETE
+    @DeleteMapping("zanr/{isbn}")
+    public void removeZanr(@PathVariable String isbn) {
+        knjigaService.removeZanrFromKnjiga(isbn);
+    }
+
+    //GRANA "PRIPADA" READ
+    @GetMapping("zanr/{isbn}")
+    public ZanrDTO getZanr(@PathVariable String isbn) {
+        return knjigaService.getZanrByKnjiga(isbn);
     }
 
 }

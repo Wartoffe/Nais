@@ -89,4 +89,13 @@ public class KnjigaService implements IKnjigaService {
     public List<KnjigaTrendDTO> nadjiKnjigePoTrendu(String naziv){
         return knjigaRepository.nadjiKnjigePoTrendu(naziv);
     }
+    public void setZanrForKnjiga(String isbn, String naziv){
+        knjigaRepository.setZanrForKnjiga(isbn, naziv);
+    }
+    public void removeZanrFromKnjiga(String isbn){
+        knjigaRepository.removeZanrFromKnjiga(isbn);
+    }
+    public ZanrDTO getZanrByKnjiga(String isbn){
+        return knjigaRepository.getZanrByKnjiga(isbn);
+    }
 }
