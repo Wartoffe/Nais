@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
-	"google.golang.org/grpc/metadata"
 
 	"search-service/embed"
 	"search-service/models"
@@ -237,74 +236,6 @@ func (h *AuthorHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"deleted_id": id})
 }
 
-// GET /authors/search?query=...&top_k=5
-func (h *AuthorHandler) Search(c *gin.Context) {
-	if !checkClientA(c, h.milvus) {
-		return
-	}
-
-	query := c.Query("query")
-	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query param required"})
-		return
-	}
-	topK, _ := strconv.Atoi(c.DefaultQuery("top_k", "5"))
-
-	vec, err := h.embedder.Text(query)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed"})
-		return
-	}
-
-	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
-	ctx := safeCtxA(c)
-
-	if md, ok := metadata.FromOutgoingContext(ctx); ok {
-		_ = md
-	}
-
-	results, err := h.milvus.Search(ctx, schema.CollectionAuthors, nil,
-		"", []string{"id", "name", "lastname", "author_id", "country"},
-		[]entity.Vector{entity.FloatVector(vec)},
-		"bio_vector",
-		entity.COSINE,
-		topK,
-		sp,
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	var authors []models.AuthorOut
-	if len(results) > 0 {
-		ids := results[0].IDs.(*entity.ColumnInt64).Data()
-		scores := results[0].Scores
-		nameCol := results[0].Fields.GetColumn("name")
-		lastCol := results[0].Fields.GetColumn("lastname")
-		aidCol := results[0].Fields.GetColumn("author_id")
-		countryCol := results[0].Fields.GetColumn("country")
-
-		for i := range ids {
-			name, _ := nameCol.(*entity.ColumnVarChar).ValueByIdx(i)
-			lastname, _ := lastCol.(*entity.ColumnVarChar).ValueByIdx(i)
-			aid, _ := aidCol.(*entity.ColumnVarChar).ValueByIdx(i)
-			country, _ := countryCol.(*entity.ColumnVarChar).ValueByIdx(i)
-			authors = append(authors, models.AuthorOut{
-				ID:       ids[i],
-				Name:     name,
-				Lastname: lastname,
-				AuthorID: aid,
-				Country:  country,
-				Score:    scores[i],
-			})
-		}
-	}
-	c.JSON(http.StatusOK, authors)
-}
-
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
 func colsToAuthors(cols []entity.Column) []models.AuthorOut {
 	if len(cols) == 0 {
 		return nil
@@ -339,67 +270,7 @@ func colsToAuthors(cols []entity.Column) []models.AuthorOut {
 	return authors
 }
 
-// GET /queries/authors/by-author-id?author_id=AUTH002
-func (h *AuthorHandler) ByAuthorID(c *gin.Context) {
-	if !checkClientA(c, h.milvus) {
-		return
-	}
-
-	authorID := c.Query("author_id")
-	if authorID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "author_id query param required"})
-		return
-	}
-	expr := fmt.Sprintf("author_id == %q", authorID)
-	ctx := safeCtxA(c)
-	results, err := h.milvus.Query(ctx, schema.CollectionAuthors, nil, expr, []string{"id", "name", "lastname", "author_id", "country"}, client.WithLimit(10))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, colsToAuthors(results))
-}
-
-// GET /queries/authors/search-filtered?query=orwell&lastname=Orwell&author_id=AUTH002&top_k=5
-// Complex query: vector search + two scalar filters (lastname + author_id).
-func (h *AuthorHandler) SearchFiltered(c *gin.Context) {
-	if !checkClientA(c, h.milvus) {
-		return
-	}
-
-	query := c.Query("query")
-	lastname := c.Query("lastname")
-	authorID := c.Query("author_id")
-	if query == "" || lastname == "" || authorID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query, lastname and author_id query params are required"})
-		return
-	}
-	topK, _ := strconv.Atoi(c.DefaultQuery("top_k", "5"))
-	vec, err := h.embedder.Text(query)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed"})
-		return
-	}
-	expr := fmt.Sprintf("lastname == %q && author_id == %q", lastname, authorID)
-	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
-	ctx := safeCtxA(c)
-	results, err := h.milvus.Search(ctx, schema.CollectionAuthors, nil,
-		expr, []string{"id", "name", "lastname", "author_id", "country"},
-		[]entity.Vector{entity.FloatVector(vec)}, "bio_vector", entity.COSINE, topK, sp)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, authorSearchResult(results))
-}
-
 // GET /queries/authors/search-iterator?query=russian+novelist&lastname=Tolstoy&batch=50&max=200
-//
-// Complex query: vector search with a scalar filter (lastname) executed via a
-// search iterator. author_id is intentionally excluded — it is an opaque
-// identifier, not a semantic field. lastname is used as the filter because it
-// is a meaningful grouping dimension (e.g. "give me everyone with this
-// surname that semantically matches my query").
 func (h *AuthorHandler) SearchWithIterator(c *gin.Context) {
 	if !checkClientA(c, h.milvus) {
 		return

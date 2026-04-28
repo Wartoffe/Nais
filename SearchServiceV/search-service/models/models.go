@@ -1,9 +1,5 @@
 package models
 
-// ─── Book ────────────────────────────────────────────────────────────────────
-// Non-vectorised fields : isbn (VARCHAR), title (VARCHAR), author (VARCHAR)
-// Vectorised field      : title_vector (FLOAT_VECTOR dim=768, COSINE AUTOINDEX)
-
 type BookIn struct {
 	ISBN   string `json:"isbn"   binding:"required"`
 	Title  string `json:"title"  binding:"required"`
@@ -23,10 +19,6 @@ type BookOut struct {
 	Author string  `json:"author"`
 	Score  float32 `json:"score,omitempty"`
 }
-
-// ─── Author ──────────────────────────────────────────────────────────────────
-// Non-vectorised fields : name (VARCHAR), lastname (VARCHAR), author_id (VARCHAR)
-// Vectorised field      : bio_vector (FLOAT_VECTOR dim=768, COSINE AUTOINDEX)
 
 type AuthorIn struct {
 	Name     string `json:"name"      binding:"required"`

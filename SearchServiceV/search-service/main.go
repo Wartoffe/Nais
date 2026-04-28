@@ -61,7 +61,6 @@ func main() {
 	{
 		authors.POST("", authorHandler.Create)
 		authors.GET("", authorHandler.List)
-		authors.GET("/search", authorHandler.Search)
 		authors.GET("/:id", authorHandler.Get)
 		authors.PUT("/:id", authorHandler.Update)
 		authors.DELETE("/:id", authorHandler.Delete)
@@ -69,13 +68,9 @@ func main() {
 
 	queries := r.Group("/queries")
 	{
-		queries.GET("/books/count-by-author", bookHandler.CountByAuthor)
-		queries.GET("/books/search-filtered", bookHandler.SearchFiltered)
 		queries.GET("/books/hybrid", bookHandler.HybridSearch)
-		queries.GET("/authors/by-author-id", authorHandler.ByAuthorID)
-		queries.GET("/authors/search-filtered", authorHandler.SearchFiltered)
-		queries.GET("/authors/search-iterator", authorHandler.SearchWithIterator)
 		queries.GET("/books/search-iterator", bookHandler.SearchWithIterator)
+		queries.GET("/authors/search-iterator", authorHandler.SearchWithIterator)
 	}
 
 	log.Printf("search-service listening on :%s", cfg.ServerPort)

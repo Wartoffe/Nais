@@ -305,8 +305,6 @@ func (h *BookHandler) Search(c *gin.Context) {
 	c.JSON(http.StatusOK, books)
 }
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
 func colsToBooks(cols []entity.Column) []models.BookOut {
 	if len(cols) == 0 {
 		return nil
@@ -337,70 +335,7 @@ func colsToBooks(cols []entity.Column) []models.BookOut {
 	return books
 }
 
-// GET /queries/books/count-by-author?author=George%20Orwell
-func (h *BookHandler) CountByAuthor(c *gin.Context) {
-	if !checkClient(c, h.milvus) {
-		return
-	}
-
-	author := c.Query("author")
-	if author == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "author query param required"})
-		return
-	}
-	expr := fmt.Sprintf("author == %q", author)
-	ctx := safeCtx(c)
-	results, err := h.milvus.Query(ctx, schema.CollectionBooks, nil, expr, []string{"id"})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	count := 0
-	if len(results) > 0 {
-		count = results[0].Len()
-	}
-	c.JSON(http.StatusOK, gin.H{"author": author, "count": count})
-}
-
-// GET /queries/books/search-filtered?query=dystopian&author=George%20Orwell&isbn=978-0-7432-7356-5&top_k=5
-// Complex query: vector search + scalar filtering with at least two filter conditions.
-func (h *BookHandler) SearchFiltered(c *gin.Context) {
-	if !checkClient(c, h.milvus) {
-		return
-	}
-
-	query := c.Query("query")
-	author := c.Query("author")
-	isbn := c.Query("isbn")
-	if query == "" || author == "" || isbn == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query, author and isbn query params are required"})
-		return
-	}
-	topK, _ := strconv.Atoi(c.DefaultQuery("top_k", "5"))
-	vec, err := h.embedder.Text(query)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed"})
-		return
-	}
-	expr := fmt.Sprintf("author == %q && isbn == %q", author, isbn)
-	sp, _ := entity.NewIndexAUTOINDEXSearchParam(1)
-	ctx := safeCtx(c)
-	results, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
-		expr, []string{"id", "isbn", "title", "author"},
-		[]entity.Vector{entity.FloatVector(vec)}, "title_vector", entity.COSINE, topK, sp)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, bookSearchResult(results))
-}
-
 // GET /queries/books/hybrid?query=dystopian+future&text=war&author=George%20Orwell&top_k=10
-//
-// True hybrid search: embeds query and text independently into two separate
-// vectors, runs two vector searches both filtered by author, then merges
-// results keeping the best score per id. isbn is excluded — it is an opaque
-// identifier, not a semantic field.
 func (h *BookHandler) HybridSearch(c *gin.Context) {
 	if !checkClient(c, h.milvus) {
 		return
@@ -432,7 +367,7 @@ func (h *BookHandler) HybridSearch(c *gin.Context) {
 	outputFields := []string{"id", "isbn", "title", "author"}
 	expr := fmt.Sprintf("author == %q", author)
 
-	// First pass: primary query vector filtered by author.
+
 	res1, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
 		expr, outputFields,
 		[]entity.Vector{entity.FloatVector(queryVec)},
@@ -442,7 +377,7 @@ func (h *BookHandler) HybridSearch(c *gin.Context) {
 		return
 	}
 
-	// Second pass: secondary text vector, same author filter.
+
 	res2, err := h.milvus.Search(ctx, schema.CollectionBooks, nil,
 		expr, outputFields,
 		[]entity.Vector{entity.FloatVector(textVec)},
@@ -462,7 +397,6 @@ func (h *BookHandler) HybridSearch(c *gin.Context) {
 		}
 	}
 
-	// Collect and insertion-sort descending by score, trim to topK.
 	merged := make([]models.BookOut, 0, len(scoreMap))
 	for _, b := range scoreMap {
 		merged = append(merged, b)
@@ -480,11 +414,6 @@ func (h *BookHandler) HybridSearch(c *gin.Context) {
 }
 
 // GET /queries/books/search-iterator?query=science+fiction&author=Isaac%20Asimov&batch=50&max=200
-//
-// Vector search with a scalar filter (author) iterated via offset pagination,
-// collecting results in batch-sized pages up to max total. This gives full
-// access to the filtered result space without a hard top_k cap.
-// isbn is excluded — identifier only.
 func (h *BookHandler) SearchWithIterator(c *gin.Context) {
 	if !checkClient(c, h.milvus) {
 		return

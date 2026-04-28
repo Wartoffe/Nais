@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	ClusterDBName = "library_cluster" // logical cluster name used by this service
+	ClusterDBName = "library_cluster" 
 
 	CollectionBooks   = "books"
 	CollectionAuthors = "authors"
-
-	VectorDim = 768 // nomic-embed-text output dimension
+    // nomic-embed-text output dimension
+	VectorDim = 768 
 )
 
 func BookSchema() *entity.Schema {
