@@ -8,7 +8,6 @@ public class Korisnik {
 
     @Id
     private String email; // email je prirodni ID
-
     private String ime;
     private String prezime;
     private String tipKorisnika; // "clan", "bibliotekar" nez ni sama sta jos vise

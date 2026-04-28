@@ -17,25 +17,25 @@ public class KorisnikController {
         this.korisnikService = korisnikService;
     }
 
-    // READ
+    //CVOR READ
     @GetMapping
     public ResponseEntity<List<Korisnik>> findAll() {
         return ResponseEntity.ok(korisnikService.findAll());
     }
 
-    // READ
+    //CVOR READ
     @GetMapping("/{email}")
     public ResponseEntity<Korisnik> findById(@PathVariable String email) {
         return ResponseEntity.ok(korisnikService.findById(email));
     }
 
-    // CREATE
+    //CVOR CREATE
     @PostMapping
     public ResponseEntity<Korisnik> create(@RequestBody Korisnik korisnik) {
         return ResponseEntity.ok(korisnikService.create(korisnik));
     }
 
-    // UPDATE
+    //CVOR UPDATE
     @PutMapping("/{email}/email")
     public ResponseEntity<Korisnik> azurirajEmail(
             @PathVariable String email,
@@ -43,7 +43,7 @@ public class KorisnikController {
         return ResponseEntity.ok(korisnikService.azurirajEmail(email, noviEmail));
     }
 
-    // DELETE
+    //CVOR DELETE
     @DeleteMapping("/{email}")
     public ResponseEntity<Void> delete(@PathVariable String email) {
         korisnikService.delete(email);

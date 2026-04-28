@@ -6,7 +6,7 @@ import org.springframework.data.neo4j.core.schema.*;
 public class Zanr {
 
     @Id
-    private String naziv; // naziv je prirodni ID (npr. "Fantastika")
+    private String naziv;
 
     private String opis;
 

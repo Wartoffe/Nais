@@ -1,7 +1,7 @@
 package rs.ac.uns.acs.nais.GraphDatabaseService.service;
 
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.KorisnikZanrDTO;
-import rs.ac.uns.acs.nais.GraphDatabaseService.dto.ZanrTrendDTO;
+import org.springframework.data.neo4j.repository.query.Query;
+import rs.ac.uns.acs.nais.GraphDatabaseService.dto.*;
 import rs.ac.uns.acs.nais.GraphDatabaseService.model.Knjiga;
 
 import java.util.List;
@@ -19,5 +19,12 @@ public interface IKnjigaService {
     List<Knjiga> preporuciKnjige(String email);
     List<ZanrTrendDTO> topZanroviPoTrendu(Double minRelevantnost);
     List<KorisnikZanrDTO> korisniciBrojZahtevaPoZanru();
-
+    List<TopKnjigaDTO> nadjiTop3Najtrazenije();
+    void dodajIliAzurirajJeTrend(String isbn, String naziv, Double score);
+    void obrisiJeTrend(String isbn, String naziv);
+    List<TrendDTO> nadjiTrendovePoKnjizi(String isbn);
+    List<KnjigaTrendDTO> nadjiKnjigePoTrendu(String naziv);
+    void setZanrForKnjiga(String isbn, String naziv);
+    void removeZanrFromKnjiga(String isbn);
+    ZanrDTO getZanrByKnjiga(String isbn);
 }
