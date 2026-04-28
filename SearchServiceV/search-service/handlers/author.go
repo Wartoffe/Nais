@@ -53,13 +53,20 @@ func (h *AuthorHandler) Create(c *gin.Context) {
 		return
 	}
 
+	ctx := safeCtxA(c)
+	existing, err := h.milvus.Query(ctx, schema.CollectionAuthors, nil,
+		fmt.Sprintf("author_id == %q", in.AuthorID), []string{"id"}, client.WithLimit(1))
+	if err == nil && len(existing) > 0 && existing[0].Len() > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("author_id %q already exists", in.AuthorID)})
+		return
+	}
+
 	vec, err := h.embedder.Text(in.Name + " " + in.Lastname)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed: " + err.Error()})
 		return
 	}
 
-	ctx := safeCtxA(c)
 	result, err := h.milvus.Insert(ctx, schema.CollectionAuthors, "",
 		entity.NewColumnVarChar("name", []string{in.Name}),
 		entity.NewColumnVarChar("lastname", []string{in.Lastname}),
@@ -149,6 +156,15 @@ func (h *AuthorHandler) Update(c *gin.Context) {
 	}
 
 	current := colsToAuthors(existing)[0]
+	if upd.AuthorID != nil && *upd.AuthorID != current.AuthorID {
+		conflict, err := h.milvus.Query(ctx, schema.CollectionAuthors, nil,
+			fmt.Sprintf("author_id == %q", *upd.AuthorID), []string{"id"}, client.WithLimit(1))
+		if err == nil && len(conflict) > 0 && conflict[0].Len() > 0 {
+			c.JSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("author_id %q already exists", *upd.AuthorID)})
+			return
+		}
+	}
+
 	newName := current.Name
 	newLast := current.Lastname
 	newAID := current.AuthorID

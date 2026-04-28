@@ -53,6 +53,14 @@ func (h *BookHandler) Create(c *gin.Context) {
 		return
 	}
 
+	ctx := safeCtx(c)
+	existing, err := h.milvus.Query(ctx, schema.CollectionBooks, nil,
+		fmt.Sprintf("isbn == %q", in.ISBN), []string{"id"}, client.WithLimit(1))
+	if err == nil && len(existing) > 0 && existing[0].Len() > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("isbn %q already exists", in.ISBN)})
+		return
+	}
+
 	vec, err := h.embedder.Text(in.Title + " " + in.Author)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "embedding failed: " + err.Error()})
@@ -64,7 +72,6 @@ func (h *BookHandler) Create(c *gin.Context) {
 	author := []string{in.Author}
 	vectors := [][]float32{vec}
 
-	ctx := safeCtx(c)
 	result, err := h.milvus.Insert(ctx, schema.CollectionBooks, "",
 		entity.NewColumnVarChar("isbn", isbn),
 		entity.NewColumnVarChar("title", title),
@@ -159,6 +166,15 @@ func (h *BookHandler) Update(c *gin.Context) {
 	}
 
 	current := colsToBooks(existing)[0]
+	if upd.ISBN != nil && *upd.ISBN != current.ISBN {
+		conflict, err := h.milvus.Query(ctx, schema.CollectionBooks, nil,
+			fmt.Sprintf("isbn == %q", *upd.ISBN), []string{"id"}, client.WithLimit(1))
+		if err == nil && len(conflict) > 0 && conflict[0].Len() > 0 {
+			c.JSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("isbn %q already exists", *upd.ISBN)})
+			return
+		}
+	}
+
 	newISBN := current.ISBN
 	newTitle := current.Title
 	newAuthor := current.Author

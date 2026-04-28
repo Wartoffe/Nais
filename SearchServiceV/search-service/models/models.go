@@ -32,12 +32,14 @@ type AuthorIn struct {
 	Name     string `json:"name"      binding:"required"`
 	Lastname string `json:"lastname"  binding:"required"`
 	AuthorID string `json:"author_id" binding:"required"`
+	Country  string `json:"country"   binding:"required"`
 }
 
 type AuthorUpdate struct {
 	Name     *string `json:"name"`
 	Lastname *string `json:"lastname"`
 	AuthorID *string `json:"author_id"`
+	Country  *string `json:"country"`
 }
 
 type AuthorOut struct {
@@ -45,5 +47,6 @@ type AuthorOut struct {
 	Name     string  `json:"name"`
 	Lastname string  `json:"lastname"`
 	AuthorID string  `json:"author_id"`
+	Country  string  `json:"country"`
 	Score    float32 `json:"score,omitempty"`
 }
