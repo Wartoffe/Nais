@@ -204,11 +204,14 @@ def ingest(data_path: str = REVIEWS_PARQUET_PATH, reset: bool = False, limit: in
 
     logger.info("Reviews ingest done. Total inserted=%d, skipped=%d", total, skipped)
 
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Ingest reviews into Milvus")
     parser.add_argument("--data", default=REVIEWS_PARQUET_PATH, help="Path to reviews parquet")
     parser.add_argument("--reset", action="store_true", help="Drop and recreate collection")
     parser.add_argument("--limit", type=int, default=None, help="Optional max number of rows to ingest")
     args = parser.parse_args()
     ingest(data_path=args.data, reset=args.reset, limit=args.limit)
+
+
+if __name__ == "__main__":
+    main()
