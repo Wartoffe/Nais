@@ -4,6 +4,7 @@ package nais.search.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import nais.search.dto.BookDto;
 import nais.search.enums.Format;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.data.annotation.Id;
@@ -111,6 +112,30 @@ public class Book {
         this.awards = awards;
         this.setting = setting;
         this.characters = characters;
+    }
+
+    public Book(BookDto dto) {
+        this.isbns = dto.getIsbns();
+        this.title = dto.getTitle();
+        this.originalTitle = dto.getOriginalTitle();
+        this.subtitle = dto.getSubtitle();
+        this.authors = dto.getAuthors();
+        this.genres = dto.getGenres();
+        this.language = dto.getLanguage();
+        this.translators = dto.getTranslators();
+        this.illustrators = dto.getIllustrators();
+        this.introductions = dto.getIntroductions();
+        this.afterwords = dto.getAfterwords();
+        this.publisher = dto.getPublisher();
+        this.publishDate = dto.getPublishDate();
+        this.format = dto.getFormat();
+        this.series = dto.getSeries();
+        this.textExcerpt = dto.getTextExcerpt();
+        this.description = dto.getDescription();
+        this.numberOfPages = dto.getNumberOfPages();
+        this.awards = dto.getAwards();
+        this.setting = dto.getSetting();
+        this.characters = dto.getCharacters();
     }
 
     public String getRecordId() {

@@ -1,5 +1,6 @@
 package nais.search.service;
 
+import nais.search.dto.BookDto;
 import nais.search.model.Book;
 import nais.search.repository.BookRepository;
 import org.springframework.data.domain.Page;

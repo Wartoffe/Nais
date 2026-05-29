@@ -27,7 +27,7 @@ public class PersonController {
         return null;
     }
 
-    @PatchMapping("/{personId}")
+    @PutMapping("/{personId}")
     public ResponseEntity<?> updatePerson(){
         return null;
     }

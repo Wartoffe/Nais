@@ -1,8 +1,11 @@
 package nais.search.controller;
 
+import nais.search.dto.BookDto;
 import nais.search.model.Book;
 import nais.search.service.BookService;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,18 +22,27 @@ public class BookController {
     }
 
     @GetMapping("/{recordId}") //TextIdx
-    public Optional<Book> getBookById(){
-        return null;
+    public Optional<Book> getBookById(@PathVariable String recordId){
+        Optional<Book> book = bookService.getBookByRecordId(recordId);
+        if(book.isEmpty())
+            return Optional.empty();
+        return book;
     }
 
     @PostMapping("/create") //TextIdx
-    public ResponseEntity<?> newBook(){
-        return null;
+    public ResponseEntity<?> newBook(@RequestBody BookDto bookDto){
+        Book book = new Book(bookDto);
+        if(bookService.createNewBook(book) != null)
+            return ResponseEntity.ok("Book added successfully");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add book");
     }
 
-    @PatchMapping("/{recordId}") //TextIdx
-    public ResponseEntity<?> updateBookById(){
-        return null;
+    @PutMapping("/{recordId}") //TextIdx
+    public ResponseEntity<?> updateBookById(@PathVariable String recordId, @RequestBody BookDto bookDto){
+        Book book = new Book(bookDto);
+        if(bookService.updateBook(recordId, book) != null)
+            return ResponseEntity.ok("Book updated successfully");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update book invalid id");
     }
 
     @DeleteMapping("/{recordId}") //TextIdx
