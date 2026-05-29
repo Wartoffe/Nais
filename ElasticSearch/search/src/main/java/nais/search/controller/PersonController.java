@@ -18,14 +18,22 @@ public class PersonController {
     }
 
     @GetMapping("/{personId}")
-    public Optional<Person> getPersonById(){}
+    public Optional<Person> getPersonById(){
+        return null;
+    }
 
     @PostMapping("/create")
-    public ResponseEntity<?> newPerson(){}
+    public ResponseEntity<?> newPerson(){
+        return null;
+    }
 
     @PatchMapping("/{personId}")
-    public ResponseEntity<?> updatePerson(){}
+    public ResponseEntity<?> updatePerson(){
+        return null;
+    }
 
     @DeleteMapping("/{personId}")
-    public ResponseEntity<?> deletePerson(){}
+    public ResponseEntity<?> deletePerson(){
+        return null;
+    }
 }
