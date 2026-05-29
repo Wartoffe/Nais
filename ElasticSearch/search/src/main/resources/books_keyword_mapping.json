@@ -1,0 +1,55 @@
+{
+  "mappings": {
+    "properties": {
+      "isbns": {
+        "type": "keyword"
+      },
+      "authors": {
+        "type": "keyword"
+      },
+      "genres": {
+        "type": "keyword"
+      },
+      "language": {
+        "type": "keyword"
+      },
+      "translators": {
+        "type": "keyword"
+      },
+      "illustrators": {
+        "type": "keyword"
+      },
+      "introductions": {
+        "type": "keyword"
+      },
+      "afterwords": {
+        "type": "keyword"
+      },
+      "publisher": {
+        "type": "keyword"
+      },
+      "publishDate": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "format": {
+        "type": "keyword"
+      },
+      "series": {
+        "type": "keyword"
+      },
+      "numberOfPages": {
+        "type": "integer"
+      },
+      "awards": {
+        "type": "keyword"
+      },
+      "setting": {
+        "type": "keyword"
+      },
+      "characters": {
+        "type": "keyword"
+      }
+    }
+  }
+}
