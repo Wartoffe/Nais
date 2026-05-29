@@ -1,8 +1,23 @@
 {
   "mappings": {
     "properties": {
+      "recordId": {
+        "type": "keyword"
+      },
       "isbns": {
         "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "originalTitle": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "subtitle": {
+        "type": "text",
+        "analyzer": "standard"
       },
       "authors": {
         "type": "keyword"
@@ -37,6 +52,14 @@
       },
       "series": {
         "type": "keyword"
+      },
+      "textExcerpt": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "standard"
       },
       "numberOfPages": {
         "type": "integer"
