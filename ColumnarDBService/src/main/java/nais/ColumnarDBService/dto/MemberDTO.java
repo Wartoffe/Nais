@@ -1,38 +1,32 @@
-package nais.ColumnarDBService.entity;
+package nais.ColumnarDBService.dto;
 
-import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
-import org.springframework.data.cassandra.core.mapping.Column;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
-import org.springframework.data.cassandra.core.mapping.Table;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Table("members")
-public class Member {
+public class MemberDTO {
 
-    //particionise se po jmbg
-    @PrimaryKeyColumn(name = "member_id", type = PrimaryKeyType.PARTITIONED)
     private UUID memberId;
-
-    @Column("ime_i_prezime")
     private String fullName;
-    @Column("email")
     private String email;
-
-    @Column("phone")
     private String phone;
 
-    @Column("membership_date")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private LocalDateTime membershipDate;
 
-    @Column("is_active")
     private boolean active;
 
-    public Member() {
+    public MemberDTO() {
     }
 
-    public Member(UUID memberId, String fullName, String email, String phone, LocalDateTime membershipDate, boolean active) {
+    public MemberDTO(UUID memberId, String fullName, String email, String phone, LocalDateTime membershipDate, boolean active) {
         this.memberId = memberId;
         this.fullName = fullName;
         this.email = email;
