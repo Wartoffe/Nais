@@ -207,6 +207,44 @@ services:
         condition: service_started
     restart: on-failure
 
+
+  timeseries-service:
+    build:
+      context: ./TimeseriesDatabaseService
+      dockerfile: Dockerfile
+    image: timeseries-service:latest
+    restart: on-failure
+    depends_on:
+      eureka-server:
+        condition: service_started
+      influxdb:
+        condition: service_healthy
+    environment:
+      SPRING_INFLUX_URL: http://influxdb:8086
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    ports:
+      - "9070:8084"
+
+  influxdb:
+    image: influxdb:2.7.6
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: nais
+      DOCKER_INFLUXDB_INIT_PASSWORD: password
+      DOCKER_INFLUXDB_INIT_ORG: nais_org
+      DOCKER_INFLUXDB_INIT_BUCKET: nais_bucket
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
   #
   # ── Neo4j + Recommendation service ───────────────────────────────────────
   #
@@ -252,3 +290,4 @@ volumes:
   ollama_data: {}
   neo4j_data:
   neo4j_logs:
+  influxdb_data: {}
