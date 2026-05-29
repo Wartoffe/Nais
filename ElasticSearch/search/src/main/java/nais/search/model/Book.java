@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import nais.search.enums.Format;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.*;
 
@@ -19,6 +20,7 @@ public class Book {
     @Field(type = FieldType.Keyword)
     @NotNull
     @Size(min = 1)
+    @Length(min=13, max=13)
     private List<String> isbns;
 
     @Field(type = FieldType.Text, analyzer = "standard")

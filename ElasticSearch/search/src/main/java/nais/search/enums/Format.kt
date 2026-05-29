@@ -1,4 +1,4 @@
 package nais.search.enums
 
-enum class Format {Hardcover, Paperback, Massmarket, Kindle
+enum class Format {HARDCOVER, PAPERBACK, MASSMARKET, KINDLE
 }

@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("api/books")
 public class BookController {
@@ -16,42 +18,25 @@ public class BookController {
         this.bookService = bookService;
     }
 
-    @GetMapping("/books_text/{recordId}") //TextIdx
-    public Book getBookText(){}
+    @GetMapping("/{recordId}") //TextIdx
+    public Optional<Book> getBookById(){}
 
-    @PostMapping("/books_text/create") //TextIdx
-    public ResponseEntity<?> newBookText(){}
+    @PostMapping("/create") //TextIdx
+    public ResponseEntity<?> newBook(){}
 
-    @PatchMapping("/books_text/{recordId}") //TextIdx
-    public ResponseEntity<?> updateBookText(){}
+    @PatchMapping("/{recordId}") //TextIdx
+    public ResponseEntity<?> updateBookById(){}
 
-    @DeleteMapping("/books_text/{recordId}") //TextIdx
-    public ResponseEntity<?> deleteBookText(){}
-
-    @GetMapping("/books_keyword/{recordId}") //KeywordIdx
-    public Book getBookKeyword(){}
-
-    @PostMapping("/books_keyword/create") //KeywordIdx
-    public ResponseEntity<?> newBookKeyword(){}
-
-    @PatchMapping("/books_keyword/{recordId}") //KeywordIdx
-    public ResponseEntity<?> updateBookKeyword(){}
-
-    @DeleteMapping("/books_keyword/{recordId}") //KeywordIdx
-    public ResponseEntity<?> deleteBookKeyword(){}
+    @DeleteMapping("/{recordId}") //TextIdx
+    public ResponseEntity<?> deleteBookById(){}
 
     @GetMapping("/fulltext-search") //Q1 TextIdxOnly
-    public Page<Book> getBooksByText(){
+    public Page<Book> fullTextSearch(){
 
     }
 
     @GetMapping("/keyword-search") //Q2 KeywordIdxOnly
-    public Page<Book> getBooksByKeyword(){
-
-    }
-
-    @GetMapping("/hybrid-search") //Q3 Hybrid
-    public Page<Book> getBooksByHybrid(){
+    public Page<Book> keywordFilteredSearch(){
 
     }
 }
