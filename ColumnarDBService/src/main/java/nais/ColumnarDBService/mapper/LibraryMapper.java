@@ -12,19 +12,19 @@ import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel= "spring")
 public interface LibraryMapper {
-    LibraryMapper mapper = Mappers.getMapper(LibraryMapper.class);
+    //LibraryMapper mapper = Mappers.getMapper(LibraryMapper.class);
     Member memberDTOToMember(MemberDTO dto);
     MemberDTO memberToMemberDTO(Member member);
     BookByGenre bookDTOToBookByGenre(BookDTO dto);
     BookDTO bookByGenreToBookDTO(BookByGenre book);
 
-    @Mapping(target = "memberName", ignore = true)
+    //@Mapping(target = "memberName", ignore = true)
     LoanByMember loanDTOToLoanByMember(LoanDTO dto);
-    @Mapping(target = "memberName", ignore = true)
+    //@Mapping(target = "memberName", ignore = true)
     LoanDTO loanByMemberToLoanDTO(LoanByMember loan);
 
-    @Mapping(target = "bookGenre", ignore = true)
-    @Mapping(target = "loanDurationDays", ignore = true)
+    //@Mapping(target = "bookGenre", ignore = true)
+    //@Mapping(target = "loanDurationDays", ignore = true)
     LoanByBook loanDTOToLoanByBook(LoanDTO dto);
 
     LoanDTO loanByBookToLoanDTO(LoanByBook loan);
