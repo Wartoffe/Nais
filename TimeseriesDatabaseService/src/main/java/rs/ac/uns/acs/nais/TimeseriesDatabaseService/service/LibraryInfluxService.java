@@ -22,7 +22,7 @@ public class LibraryInfluxService {
         this.repository = repository;
     }
 
-    // ── PromenaStatusaPorudzbine ──────────────────────────────────
+    // === PromenaStatusaPorudzbine ===============================
 
     public boolean saveStatusPromena(PromenaStatusaPorudzbine m) {
         return repository.saveStatusPromena(m);
@@ -36,7 +36,7 @@ public class LibraryInfluxService {
         return repository.findStatusByNoviStatus(noviStatus, days);
     }
 
-    // ── PromenaBudzetaPoZanru ─────────────────────────────────────
+    // ====== PromenaBudzetaPoZanru ===============================
 
     public boolean saveBudzetPromena(PromenaBudzetaPoZanru m) {
         return repository.saveBudzetPromena(m);
@@ -51,7 +51,7 @@ public class LibraryInfluxService {
     }
 
 
-    // ── PromenaPredlogaZaNabavku ──────────────────────────────────
+    // ============ PromenaPredlogaZaNabavku ===============================
 
     public boolean savePredlogPromena(PromenaPredlogaZaNabavku m) {
         return repository.savePredlogPromena(m);
@@ -66,7 +66,7 @@ public class LibraryInfluxService {
     }
 
 
-    // ── Složeni upiti ─────────────────────────────────────────────
+    // ========= Složeni upiti ===============================
 
     public List<FluxRecord> avgVremeIsporukePoDobavclja(int days) {
         return repository.avgVremeIsporukePoDobavclja(days);

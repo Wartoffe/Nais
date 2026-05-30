@@ -8,12 +8,13 @@ import org.springframework.web.bind.annotation.RestController;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.service.DataSeederService;
 
 /**
- * Kontroler za punjenje baze test podacima.
- *
- * POST /library-influx/seed/all     — puni sva 3 merenja
- * POST /library-influx/seed/status  — samo PromenaStatusaPorudzbine
- * POST /library-influx/seed/budzet  — samo PromenaBudzetaPoZanru
- * POST /library-influx/seed/predlozi — samo PromenaPredlogaZaNabavku
+ * Kontroler za punjenje baze test podacima
+ * kako ne bih morala kao u njihovom projektu
+ * ručno da unosim svaki podatak sto je glupo
+ * POST /library-influx/seed/all       — puni sva 3 merenja
+ * POST /library-influx/seed/status    — samo PromenaStatusaPorudzbine
+ * POST /library-influx/seed/budzet    — samo PromenaBudzetaPoZanru
+ * POST /library-influx/seed/predlozi  — samo PromenaPredlogaZaNabavku
  */
 @RestController
 @RequestMapping("/library-influx/seed")

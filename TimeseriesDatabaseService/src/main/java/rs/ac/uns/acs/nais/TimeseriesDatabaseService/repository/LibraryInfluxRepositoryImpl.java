@@ -12,7 +12,7 @@ import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaStatusaPorudzbi
 import java.util.List;
 
 /**
- * Implementacija repository-ja — prati isti obrazac kao PurchaseRepositoryImpl:
+ *   Kao neki koraci koje sam primetila u njihovom projektu
  *   1. buildConnection()  — otvori klijenta
  *   2. pozovi operaciju   — na LibraryInfluxDBConnectionClass
  *   3. client.close()     — zatvori klijenta

@@ -23,12 +23,14 @@ import java.time.Instant;
 @Measurement(name = "PromenaBudzetaPoZanru")
 public class PromenaBudzetaPoZanru {
 
+    //Imam dva taga na osnovu kojih vrsim identifikaciju
     @Column(tag = true)
     private String zanr;
 
     @Column(tag = true)
     private String tipPromene;
 
+    //Imam 4 vrednosti _value
     @Column
     private Double promenaStanja;
 

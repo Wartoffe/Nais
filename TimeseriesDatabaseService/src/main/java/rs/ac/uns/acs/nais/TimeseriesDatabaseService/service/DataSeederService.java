@@ -15,8 +15,6 @@ import java.util.Random;
 /**
  * Puni bazu test podacima — minimum 2000 slogova po merenju.
  *
- * Poziv: POST /library-influx/seed/all
- *
  * Merenje 1 — PromenaStatusaPorudzbine:
  *   600 narudžbina × ~3-4 eventa = ~2200 slogova
  *

@@ -19,6 +19,9 @@ import org.springframework.stereotype.Component;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaBudzetaPoZanru;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaPredlogaZaNabavku;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaStatusaPorudzbine;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+
 
 @Component
 public class InfluxDBConnectionClass {
@@ -38,17 +41,19 @@ public class InfluxDBConnectionClass {
     public InfluxDBClient buildConnection() {
         return InfluxDBClientFactory.create(url, token.toCharArray(), org, bucket);
     }
+
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
     public String getBucket() { return bucket; }
     public void setBucket(String bucket) { this.bucket = bucket; }
-
     public String getOrg() { return org; }
     public void setOrg(String org) { this.org = org; }
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
 
-    // MERENJE 1 -> CREATE
+
+    // MERENJE 1: PromenaStatusaPorudzbine — CREATE
+
 
     /**
      * Upisuje jedan event promene statusa narudžbine.
@@ -80,7 +85,8 @@ public class InfluxDBConnectionClass {
     }
 
 
-    // MERENJE 1 ->  READ
+    // MERENJE 1: PromenaStatusaPorudzbine — READ
+
 
     /** Vraća kompletan lifecycle jedne narudžbine, sortiran hronološki. */
     public List<PromenaStatusaPorudzbine> findAllByNarudzbinaid(InfluxDBClient client, String narudzbinaid) {
@@ -132,7 +138,8 @@ public class InfluxDBConnectionClass {
     }
 
 
-    // MERENJE 2 -> CREATE
+    // MERENJE 2: PromenaBudzetaPoZanru — CREATE
+
 
     public boolean saveBudzetPromena(InfluxDBClient client, PromenaBudzetaPoZanru m) {
         try {
@@ -158,7 +165,8 @@ public class InfluxDBConnectionClass {
         }
     }
 
-    //MERENJE 2 -> READ
+    // MERENJE 2: PromenaBudzetaPoZanru — READ
+
 
     public List<PromenaBudzetaPoZanru> findBudzetByZanr(InfluxDBClient client, String zanr) {
         String flux = String.format(
@@ -206,8 +214,9 @@ public class InfluxDBConnectionClass {
     }
 
 
+
     // MERENJE 3: PromenaPredlogaZaNabavku — CREATE
-    // ================================================================
+
 
     public boolean savePredlogPromena(InfluxDBClient client, PromenaPredlogaZaNabavku m) {
         try {
@@ -232,7 +241,9 @@ public class InfluxDBConnectionClass {
         }
     }
 
-    // MERENJE 3  —> READ
+
+    // MERENJE 3: PromenaPredlogaZaNabavku — READ
+
 
     public List<PromenaPredlogaZaNabavku> findPredlogByPredlogid(InfluxDBClient client, String predlogid) {
         String flux = String.format(
@@ -252,7 +263,8 @@ public class InfluxDBConnectionClass {
                         "|> range(start: 0) " +
                         "|> filter(fn: (r) => r[\"_measurement\"] == \"PromenaPredlogaZaNabavku\") " +
                         "|> filter(fn: (r) => r[\"zanr\"] == \"%s\") " +
-                        "|> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\") " +
+                        "|> filter(fn: (r) => r[\"_field\"] == \"minuteUCekanju\" or r[\"_field\"] == \"procenjenaCena\") " +
+                        "|> pivot(rowKey:[\"_time\", \"predlogid\", \"status\"], columnKey:[\"_field\"], valueColumn:\"_value\") " +
                         "|> sort(columns:[\"_time\"])",
                 bucket, zanr);
         return mapPredlog(client.getQueryApi(), flux);
@@ -278,7 +290,7 @@ public class InfluxDBConnectionClass {
         return result;
     }
 
-    // SLOŽENI UPITI
+    // SLOŽENI UPITI — pozivaju se iz Repository-ja
 
     /**
      * Upit 1: Prosečno vreme isporuke (POSLATA->ISPORUCENA) po dobavljaču.
@@ -311,6 +323,7 @@ public class InfluxDBConnectionClass {
                         "|> filter(fn: (r) => r[\"_measurement\"] == \"PromenaBudzetaPoZanru\") " +
                         "|> filter(fn: (r) => r[\"tipPromene\"] == \"NABAVKA\") " +
                         "|> filter(fn: (r) => r[\"_field\"] == \"promenaStanja\") " +
+                        "|> filter(fn: (r) => r[\"_value\"] < 0.0) " +
                         "|> group(columns: [\"zanr\"]) " +
                         "|> aggregateWindow(every: 1mo, fn: sum, createEmpty: false) " +
                         "|> map(fn: (r) => ({r with trosak: r._value * -1.0})) " +
@@ -363,5 +376,4 @@ public class InfluxDBConnectionClass {
             records.addAll(table.getRecords());
         return records;
     }
-
 }
