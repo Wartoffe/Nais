@@ -1,32 +1,52 @@
 package nais.search.service;
 
 import nais.search.dto.BookDto;
+import nais.search.enums.Format;
 import nais.search.model.Book;
+import nais.search.model.Person;
 import nais.search.repository.BookRepository;
+import nais.search.repository.PersonRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.Query;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BookService {
 
     private final BookRepository bookRepository;
+    private final PersonRepository personRepository;
+    private final ElasticsearchOperations esOps;
 
-    public BookService(BookRepository bookRepository) {
+    public BookService(BookRepository bookRepository,
+                       PersonRepository personRepository,
+                       ElasticsearchOperations esOps) {
         this.bookRepository = bookRepository;
+        this.personRepository = personRepository;
+        this.esOps = esOps;
     }
 
-    public Optional<Book> getBookByRecordId(String recordId){
-        return bookRepository.findByRecordId(recordId);
+    public Optional<Book> getBookByRecordId(String recordId) {
+        return bookRepository.findById(recordId);
     }
 
-    public Book createNewBook(Book book){
+    public Book createNewBook(Book book) {
         return bookRepository.save(book);
     }
 
     public Book updateBook(String recordId, BookDto dto) {
-        Optional<Book> existing = bookRepository.findByRecordId(recordId);
+        Optional<Book> existing = bookRepository.findById(recordId);
         if (existing.isEmpty()) return null;
 
         Book book = existing.get();
@@ -56,17 +76,97 @@ public class BookService {
         return bookRepository.save(book);
     }
 
-
-    public boolean deleteBook(String recordId){
+    public boolean deleteBook(String recordId) {
         bookRepository.deleteById(recordId);
         return true;
     }
 
-    public Page<Book> fullTextSearch(){
-        return null;
+    public Page<Book> fullTextSearch(String query, Pageable pageable) {
+        Criteria criteria = new Criteria("title").matches(query)
+                .or("originalTitle").matches(query)
+                .or("subtitle").matches(query)
+                .or("textExcerpt").matches(query)
+                .or("description").matches(query);
+
+        Query searchQuery = new CriteriaQuery(criteria).setPageable(pageable);
+        SearchHits<Book> hits = esOps.search(searchQuery, Book.class);
+
+        List<Book> books = hits.stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+
+        return PageableExecutionUtils.getPage(books, pageable, hits::getTotalHits);
     }
 
-    public Page<Book> filteredKeywordSearch(){
-        return null;
+    public Page<Book> keywordFilteredSearch(
+            String genre, String language, String publisher, Format format,
+            String series, String award, String setting, String character,
+            String isbn, Pageable pageable) {
+
+        Criteria criteria = new Criteria();
+        boolean hasCriteria = false;
+
+        if (genre     != null) { criteria = hasCriteria ? criteria.and("genres").is(genre)         : new Criteria("genres").is(genre);         hasCriteria = true; }
+        if (language  != null) { criteria = hasCriteria ? criteria.and("language").is(language)    : new Criteria("language").is(language);    hasCriteria = true; }
+        if (publisher != null) { criteria = hasCriteria ? criteria.and("publisher").is(publisher)  : new Criteria("publisher").is(publisher);  hasCriteria = true; }
+        if (format    != null) { criteria = hasCriteria ? criteria.and("format").is(format.name()) : new Criteria("format").is(format.name()); hasCriteria = true; }
+        if (series    != null) { criteria = hasCriteria ? criteria.and("series").is(series)        : new Criteria("series").is(series);        hasCriteria = true; }
+        if (award     != null) { criteria = hasCriteria ? criteria.and("awards").is(award)         : new Criteria("awards").is(award);         hasCriteria = true; }
+        if (setting   != null) { criteria = hasCriteria ? criteria.and("setting").is(setting)      : new Criteria("setting").is(setting);      hasCriteria = true; }
+        if (character != null) { criteria = hasCriteria ? criteria.and("characters").is(character) : new Criteria("characters").is(character); hasCriteria = true; }
+        if (isbn      != null) { criteria = hasCriteria ? criteria.and("isbns").is(isbn)           : new Criteria("isbns").is(isbn);           hasCriteria = true; }
+
+        if (!hasCriteria) return bookRepository.findAll(pageable);
+
+        Query searchQuery = new CriteriaQuery(criteria).setPageable(pageable);
+        SearchHits<Book> hits = esOps.search(searchQuery, Book.class);
+
+        List<Book> books = hits.stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+
+        return PageableExecutionUtils.getPage(books, pageable, hits::getTotalHits);
+    }
+
+    public Page<Book> findBooksByAuthorName(String firstName, String lastName, Pageable pageable) {
+        if (firstName == null && lastName == null) {
+            return Page.empty(pageable);
+        }
+
+        Criteria personCriteria = new Criteria();
+        boolean hasCriteria = false;
+
+        if (firstName != null) {
+            personCriteria = new Criteria("firstName").is(firstName);
+            hasCriteria = true;
+        }
+        if (lastName != null) {
+            personCriteria = hasCriteria
+                    ? personCriteria.and("lastName").is(lastName)
+                    : new Criteria("lastName").is(lastName);
+        }
+
+        Query personQuery = new CriteriaQuery(personCriteria);
+        SearchHits<Person> personHits = esOps.search(personQuery, Person.class);
+
+        List<String> personIds = personHits.stream()
+                .map(hit -> hit.getContent().getPersonId())
+                .collect(Collectors.toList());
+
+        if (personIds.isEmpty()) return Page.empty(pageable);
+
+        Criteria bookCriteria = new Criteria("authors").is(personIds.get(0));
+        for (int i = 1; i < personIds.size(); i++) {
+            bookCriteria = bookCriteria.or("authors").is(personIds.get(i));
+        }
+
+        Query bookQuery = new CriteriaQuery(bookCriteria).setPageable(pageable);
+        SearchHits<Book> bookHits = esOps.search(bookQuery, Book.class);
+
+        List<Book> books = bookHits.stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+
+        return PageableExecutionUtils.getPage(books, pageable, bookHits::getTotalHits);
     }
 }

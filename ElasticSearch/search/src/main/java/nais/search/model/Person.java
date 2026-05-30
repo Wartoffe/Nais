@@ -2,6 +2,7 @@ package nais.search.model;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import nais.search.dto.PersonDto;
 import nais.search.enums.Role;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
@@ -61,6 +62,18 @@ public class Person {
     }
 
     public Person() {
+    }
+
+    public Person(PersonDto dto) {
+        this.firstName = dto.getFirstName();
+        this.lastName = dto.getLastName();
+        this.placeOfBirth = dto.getPlaceOfBirth();
+        this.dateOfBirth = dto.getDateOfBirth();
+        this.dateOfDeath = dto.getDateOfDeath();
+        this.role = dto.getRole();
+        this.genres = dto.getGenres();
+        this.books = dto.getBooks();
+        this.bio = dto.getBio();
     }
 
     public String getPersonId() {
