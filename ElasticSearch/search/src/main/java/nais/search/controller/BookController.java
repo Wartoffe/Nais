@@ -37,17 +37,23 @@ public class BookController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add book");
     }
 
-    @PutMapping("/{recordId}") //TextIdx
-    public ResponseEntity<?> updateBookById(@PathVariable String recordId, @RequestBody BookDto bookDto){
-        Book book = new Book(bookDto);
-        if(bookService.updateBook(recordId, book) != null)
+    @PatchMapping("/{recordId}")
+    public ResponseEntity<?> updateBookById(@PathVariable String recordId, @RequestBody BookDto bookDto) {
+        Book updated = bookService.updateBook(recordId, bookDto);
+        if (updated != null)
             return ResponseEntity.ok("Book updated successfully");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update book invalid id");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update book: invalid id");
     }
 
+
     @DeleteMapping("/{recordId}") //TextIdx
-    public ResponseEntity<?> deleteBookById(){
-        return null;
+    public ResponseEntity<?> deleteBookById(@PathVariable String recordId){
+        try{
+            bookService.deleteBook(recordId);
+            return ResponseEntity.ok("Book has been deleted successfully");
+        } catch (RuntimeException e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete book");
+        }
     }
 
     @GetMapping("/fulltext-search") //Q1 TextIdxOnly
@@ -59,4 +65,7 @@ public class BookController {
     public Page<Book> keywordFilteredSearch(){
         return null;
     }
+
+    @GetMapping("/by-author-name") //Q3 byAuthorName
+    public Page<Book> authorNameSearch(){ return null; }
 }
