@@ -245,6 +245,49 @@ services:
         condition: service_started
     restart: on-failure
 
+  cassandra:
+    image: cassandra:4.1
+    container_name: library-cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=LibraryCluster
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-e", "describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: library-redis
+    ports:
+      - "6379:6379"
+  
+  library-service:
+    build:
+      context: ./ColumnarDBService
+    container_name: library-service
+    ports:
+      - "9060:9060"
+    depends_on:
+      cassandra:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+    environment:
+      # Cassandra
+      SPRING_DATA_CASSANDRA_CONTACT_POINTS: cassandra
+      SPRING_DATA_CASSANDRA_PORT: 9042
+      SPRING_DATA_CASSANDRA_KEYSPACE_NAME: library
+      SPRING_DATA_CASSANDRA_SCHEMA_ACTION: CREATE_IF_NOT_EXISTS
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_ENABLED: "true"
+      SERVER_PORT: 9060
 #
 # ── Named volumes ─────────────────────────────────────────────────────────
 #
