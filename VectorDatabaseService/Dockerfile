@@ -43,6 +43,7 @@ COPY service/    ./service/
 COPY controller/ ./controller/
 COPY ingest/     ./ingest/
 COPY data/       ./data/
+COPY utils/      ./utils/
 
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
