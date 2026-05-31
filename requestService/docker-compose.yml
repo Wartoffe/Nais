@@ -1,10 +1,26 @@
 services:
-
-  redis:
-    image: redis:7.2-alpine
-    container_name: request-service-redis
+  request-db-postgres:
+    image: postgres:16-alpine
+    container_name: request-db-postgres
+    environment:
+      POSTGRES_DB: requestdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "6379:6379"
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  request-db:
+    image: redis:7.2-alpine
+    container_name: request-db
+    ports:
+      - "6383:6379"
     volumes:
       - redis-data:/data
     restart: unless-stopped
@@ -13,21 +29,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  app:
+  request-service:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: request-service-app
+    container_name: request-service
     ports:
-      - "8080:8080"
+      - "8086:8080"
     environment:
-      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATASOURCE_URL: jdbc:postgresql://request-db-postgres:5432/requestdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATA_REDIS_HOST: request-db
       SPRING_DATA_REDIS_PORT: 6379
+      SERVER_PORT: 8080
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
-      redis:
+      request-db-postgres:
         condition: service_healthy
-    restart: unless-stopped
-
+      request-db:
+        condition: service_healthy
+    restart: on-failure
 volumes:
+  postgres-data:
   redis-data:
