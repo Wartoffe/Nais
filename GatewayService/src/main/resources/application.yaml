@@ -37,3 +37,10 @@ spring:
           filters:
             - StripPrefix=1
 
+        - id: library-service
+          uri: lb://library-service
+          predicates:
+            - Path=/library-service/**
+          filters:
+            - StripPrefix=1
+
