@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: library-cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=LibraryCluster
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-e", "describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: library-redis
+    ports:
+      - "6379:6379"
+
+  library-service:
+    build: .
+    container_name: library-service
+    ports:
+      - "9060:9060"
+    depends_on:
+      cassandra:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - SPRING_DATA_CASSANDRA_CONTACT_POINTS=cassandra
+      - SPRING_DATA_CASSANDRA_PORT=9042
+      - SPRING_DATA_CASSANDRA_KEYSPACE_NAME=library
+      - SPRING_DATA_CASSANDRA_SCHEMA_ACTION=CREATE_IF_NOT_EXISTS
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
