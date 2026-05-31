@@ -352,7 +352,7 @@ public class InfluxDBConnectionClass {
     }
 
     /**
-     * Upit 4 (bonus): Analiza otkazivanja narudžbina po dobavljaču.
+     * Upit 4: Analiza otkazivanja narudžbina po dobavljaču.
      * Broji OTKAZANA evente, računa prosečno vreme čekanja pre otkazivanja.
      * Sortira po broju otkazanih (opadajuće).
      */

@@ -244,6 +244,12 @@ services:
       timeout: 5s
       retries: 5
 
+  timeseries-redis:
+    image: redis:7-alpine
+    container_name: timeseries-redis
+    ports:
+      - "6380:6380"
+
 
   #
   # ── Neo4j + Recommendation service ───────────────────────────────────────

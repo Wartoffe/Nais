@@ -12,6 +12,10 @@ spring:
     url: http://localhost:8086
     user: nais
     password: password
+  data:
+    redis:
+      host: timeseries-redis
+      port: 6380
 
 eureka:
   client:

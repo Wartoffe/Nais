@@ -1,6 +1,7 @@
 package rs.ac.uns.acs.nais.TimeseriesDatabaseService.service;
 
 import com.influxdb.query.FluxRecord;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaBudzetaPoZanru;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaPredlogaZaNabavku;
@@ -68,18 +69,22 @@ public class LibraryInfluxService {
 
     // ========= Složeni upiti ===============================
 
+    @Cacheable(value = "avgIsporuka", key = "#days")
     public List<FluxRecord> avgVremeIsporukePoDobavclja(int days) {
         return repository.avgVremeIsporukePoDobavclja(days);
     }
 
+    @Cacheable(value = "budzetMesecno", key = "#months")
     public List<FluxRecord> budzetPoZanruMesecno(int months) {
         return repository.budzetPoZanruMesecno(months);
     }
 
+    @Cacheable(value = "odobreniPredloziPoZanru", key = "#days")
     public List<FluxRecord> odobreniPredloziPoZanru(int days) {
         return repository.odobreniPredloziPoZanru(days);
     }
 
+    @Cacheable(value = "otkazivanja", key = "#days")
     public List<FluxRecord> otkazivanjePoDobavclja(int days) {
         return repository.otkazivanjePoDobavclja(days);
     }
