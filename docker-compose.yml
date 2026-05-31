@@ -134,12 +134,19 @@ services:
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: qwen2.5:1.5b
       APP_PORT: 8000
+      REDIS_HOST: redis-cache-books
+      REDIS_PORT: 6379                 
+      EXACT_CACHE_TTL: 3600            
+      SEMANTIC_CACHE_TTL: 3600       
+      EMBED_INDEX_TTL: 3600  
+      SEMANTIC_THRESHOLD: "0.95"
     volumes:
       - ./VectorDatabaseService/data:/app/data:ro
     depends_on:
       - eureka-server
       - ollama
       - standalone
+      - redis-cache-books
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 20s
@@ -171,6 +178,9 @@ services:
       standalone:
         condition: service_healthy
 
+  #
+  # Nenad KT2 ────────────────────────────────────────────────────────────────
+  #
   elastic-search-books-reviews-service:
     build:
       context: ./BookAndReviewsSearchService
@@ -226,6 +236,23 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearchbooks:9200
     depends_on:
       - elasticsearchbooks
+
+  redis-cache-books:
+    image: redis:7.2-alpine
+    container_name: redis-cache-books
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_cache_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  #
+  # ──────────────────────────────────────────────────────────────────────
+  #
 
   search-service:
     build:
@@ -531,6 +558,7 @@ volumes:
   redis-data:
   postgres-data:
   elasticsearch-cache-data:
+  redis_cache_data: {}
 
 networks:
   nais-net:

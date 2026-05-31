@@ -17,6 +17,19 @@ APP_NAME = "vector-database-service"
 # Service Discovery: URL for the Eureka registry to allow microservices to find each other
 EUREKA_SERVER = os.getenv("EUREKA_CLIENT_SERVICEURL_DEFAULTZONE", "http://eureka-server:8761/eureka")
 
+# Redis keš konfiguracija
+# Hostname Redis kontejnera — mora odgovarati imenu servisa u docker-compose
+REDIS_HOST = os.getenv("REDIS_HOST", "redis-cache-books")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+ 
+# TTL-ovi u sekundama
+EXACT_CACHE_TTL    = int(os.getenv("EXACT_CACHE_TTL",    str(60 * 60)))   # 60 min
+SEMANTIC_CACHE_TTL = int(os.getenv("SEMANTIC_CACHE_TTL", str(60 * 60)))   # 60 min
+EMBED_INDEX_TTL    = int(os.getenv("EMBED_INDEX_TTL",    str(60 * 60)))   # 60 min
+ 
+# Prag semantičke sličnosti (0.0-1.0); 0.95 = skoro identični upiti
+SEMANTIC_THRESHOLD = float(os.getenv("SEMANTIC_THRESHOLD", "0.95"))
+
 # Indexing and search parameters (trade-off between speed and accuracy)
 LAB_NLIST      = 64 # Number of clusters for the IVF index
 LAB_NPROBE     = 16 # Number of clusters to search through during queries

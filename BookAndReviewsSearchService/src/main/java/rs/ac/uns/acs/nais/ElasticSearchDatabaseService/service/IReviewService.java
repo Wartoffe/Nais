@@ -1,5 +1,7 @@
 package rs.ac.uns.acs.nais.ElasticSearchDatabaseService.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import rs.ac.uns.acs.nais.ElasticSearchDatabaseService.model.Review;
 
 import java.util.List;
@@ -19,6 +21,6 @@ public interface IReviewService {
 
     // ── READ ─────────────────────────────────────────────────────────────────
     Optional<Review> findById(String id);
-    List<Review> findAll();
+    Page<Review> findAll(Pageable pageable);
     List<Review> findAllById(List<String> ids);
 }

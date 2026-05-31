@@ -7,7 +7,6 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -59,19 +58,11 @@ public class Book {
     @Field(type = FieldType.Keyword)
     private String publisher;
 
-    @Field(
-            type = FieldType.Date,
-            format = {},
-            pattern = "M/d/yyyy"
-    )
-    private LocalDate publishDate;
+    @Field(type = FieldType.Keyword)
+    private String publishDate;
 
-    @Field(
-            type = FieldType.Date,
-            format = {},
-            pattern = "M/d/yyyy"
-    )
-    private LocalDate firstPublishDate;
+    @Field(type = FieldType.Keyword)
+    private String firstPublishDate;
 
     @Field(type = FieldType.Keyword)
     private List<String> awards;
@@ -100,7 +91,7 @@ public class Book {
     @Field(type = FieldType.Double)
     private Double price;
 
-    public Book(String bookId, String title, String series, String author, Double rating, String description, String language, String isbn, List<String> genres, List<String> characters, String bookForm, String edition, Integer pages, String publisher, LocalDate publishDate, LocalDate firstPublishDate, List<String> awards, Integer numRatings, List<Integer> ratingsByStars, Double likedPercent, List<String> setting, String coverImg, Double bbeScore, Integer bbeVotes, Double price) {
+    public Book(String bookId, String title, String series, String author, Double rating, String description, String language, String isbn, List<String> genres, List<String> characters, String bookForm, String edition, Integer pages, String publisher, String publishDate, String firstPublishDate, List<String> awards, Integer numRatings, List<Integer> ratingsByStars, Double likedPercent, List<String> setting, String coverImg, Double bbeScore, Integer bbeVotes, Double price) {
         this.bookId = bookId;
         this.title = title;
         this.series = series;
