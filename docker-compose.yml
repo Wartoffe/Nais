@@ -2,24 +2,25 @@ version: "3.8"
 
 services:
   graph-database-service:
-   build:
-     context: ./GraphDatabaseService
-     dockerfile: Dockerfile
-   image: graph-database-service:latest
-   ports:
-     - "9050:9050"
-   environment:
-     EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-     SPRING_NEO4J_URI: bolt://neo4j:7687
-     SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
-     SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
-     SERVER_PORT: 9050
-   depends_on:
-     neo4j:
-       condition: service_healthy
-     eureka-server:
-       condition: service_started
-   restart: on-failure
+    build:
+      context: ./GraphDatabaseService
+      dockerfile: Dockerfile
+    image: graph-database-service:latest
+    ports:
+      - "9050:9050"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_NEO4J_URI: bolt://neo4j:7687
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
+      SERVER_PORT: 9050
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    restart: on-failure
+
   #
   # ── Service Discovery ─────────────────────────────────────────────────────
   #
@@ -245,6 +246,118 @@ services:
         condition: service_started
     restart: on-failure
 
+  #
+  # ── Elasticsearch + Search service ───────────────────────────────────────
+  #
+  elasticsearch-db:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.1
+    container_name: elasticsearch-db
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  es-init:
+    image: curlimages/curl:latest
+    container_name: es-init
+    depends_on:
+      elasticsearch-db:
+        condition: service_healthy
+    volumes:
+      - /home/wartoffe/Desktop/projects/Nais/ElasticSearch/search/src/main/resources:/data
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "==> Creating index: books"
+        curl -s -X PUT "http://elasticsearch-db:9200/books" \
+          -H "Content-Type: application/json" \
+          -d @/data/books_mapping.json
+
+        echo "==> Creating index: persons"
+        curl -s -X PUT "http://elasticsearch-db:9200/persons" \
+          -H "Content-Type: application/json" \
+          -d @/data/persons_mapping.json
+
+        echo "==> Importing books..."
+        curl -s -X POST "http://elasticsearch-db:9200/_bulk" \
+          -H "Content-Type: application/x-ndjson" \
+          --data-binary @/data/books_bulk.ndjson
+
+        echo "==> Importing persons..."
+        curl -s -X POST "http://elasticsearch-db:9200/_bulk" \
+          -H "Content-Type: application/x-ndjson" \
+          --data-binary @/data/persons_bulk.ndjson
+
+        echo "==> Done!"
+        curl -s "http://elasticsearch-db:9200/books/_count"
+        curl -s "http://elasticsearch-db:9200/persons/_count"
+    restart: "no"
+
+  elasticsearch-service:
+    build:
+      context: /home/wartoffe/Desktop/projects/Nais/ElasticSearch/search
+      dockerfile: Dockerfile
+    container_name: elasticsearch-service
+    ports:
+      - "8084:8080"
+    environment:
+      - SPRING_ELASTICSEARCH_URIS=http://elasticsearch-db:9200
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    depends_on:
+      elasticsearch-db:
+        condition: service_healthy
+      es-init:
+        condition: service_completed_successfully
+      eureka-server:
+        condition: service_started
+    restart: on-failure
+
+  #
+  # ── Redis + Request service ───────────────────────────────────────────────
+  #
+  request-db:
+    image: redis:7.2-alpine
+    container_name: request-db
+    ports:
+      - "6383:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  request-service:
+    build:
+      context: /home/wartoffe/Desktop/projects/Nais/requestService
+      dockerfile: Dockerfile
+    container_name: request-service
+    ports:
+      - "8086:8080"
+    environment:
+      SPRING_DATA_REDIS_HOST: request-db
+      SPRING_DATA_REDIS_PORT: 6379
+      SERVER_PORT: 8080
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+    depends_on:
+      request-db:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    restart: on-failure
+
 #
 # ── Named volumes ─────────────────────────────────────────────────────────
 #
@@ -252,3 +365,10 @@ volumes:
   ollama_data: {}
   neo4j_data:
   neo4j_logs:
+  es_data:
+    driver: local
+  redis-data:
+
+networks:
+  nais-net:
+    driver: bridge
