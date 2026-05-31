@@ -21,9 +21,6 @@ services:
         condition: service_started
     restart: on-failure
 
-  #
-  # ── Service Discovery ─────────────────────────────────────────────────────
-  #
   eureka-server:
     build:
       context: ./EurekaService
@@ -37,9 +34,6 @@ services:
       timeout: 10s
       retries: 5
 
-  #
-  # ── Gateway ───────────────────────────────────────────────────────────────
-  #
   gateway-api:
     build:
       context: ./GatewayService
@@ -52,9 +46,6 @@ services:
     ports:
       - "9003:9000"
 
-  #
-  # ── Milvus stack (shared) ─────────────────────────────────────────────────
-  #
   etcd:
     container_name: milvus-etcd
     image: quay.io/coreos/etcd:v3.5.25
@@ -116,9 +107,6 @@ services:
       minio:
         condition: service_healthy
 
-  #
-  # ── Ollama (shared LLM) ───────────────────────────────────────────────────
-  #
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -132,9 +120,6 @@ services:
       timeout: 10s
       retries: 12
 
-  #
-  # ── Nenad's vector-database-service ──────────────────────────────────────
-  #
   vector-database-service:
     build:
       context: ./VectorDatabaseService
@@ -149,12 +134,19 @@ services:
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: qwen2.5:1.5b
       APP_PORT: 8000
+      REDIS_HOST: redis-cache-books
+      REDIS_PORT: 6379                 
+      EXACT_CACHE_TTL: 3600            
+      SEMANTIC_CACHE_TTL: 3600       
+      EMBED_INDEX_TTL: 3600  
+      SEMANTIC_THRESHOLD: "0.95"
     volumes:
       - ./VectorDatabaseService/data:/app/data:ro
     depends_on:
       - eureka-server
       - ollama
       - standalone
+      - redis-cache-books
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 20s
@@ -185,19 +177,19 @@ services:
     depends_on:
       standalone:
         condition: service_healthy
-  
+
   #
-  # ── Nenad's elastic-search-books-reviews-service ──────────────────────────
+  # Nenad KT2 ────────────────────────────────────────────────────────────────
   #
   elastic-search-books-reviews-service:
-    build: 
+    build:
       context: ./BookAndReviewsSearchService
       dockerfile: Dockerfile
     image: elastic-search-service:latest
     restart: on-failure
     depends_on:
       eureka-server:
-       condition: service_started
+        condition: service_started
       elasticsearchbooks:
         condition: service_healthy
     environment:
@@ -224,7 +216,7 @@ services:
       interval: 20s
       timeout: 10s
       retries: 5
-  
+
   elasticsearchbooks-init:
     image: python:3.11-slim
     depends_on:
@@ -245,9 +237,23 @@ services:
     depends_on:
       - elasticsearchbooks
 
+  redis-cache-books:
+    image: redis:7.2-alpine
+    container_name: redis-cache-books
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_cache_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   #
-  # ── Search service ────────────────────────────────────────────────────────
+  # ──────────────────────────────────────────────────────────────────────
   #
+
   search-service:
     build:
       context: ./SearchServiceV/search-service
@@ -279,9 +285,13 @@ services:
         condition: service_started
       influxdb:
         condition: service_healthy
+      timeseries-redis:
+        condition: service_healthy
     environment:
       SPRING_INFLUX_URL: http://influxdb:8086
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_DATA_REDIS_HOST: timeseries-redis
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
       - "9070:8084"
 
@@ -308,7 +318,12 @@ services:
     image: redis:7-alpine
     container_name: timeseries-redis
     ports:
-      - "6380:6380"
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 
   #
@@ -349,6 +364,49 @@ services:
         condition: service_started
     restart: on-failure
 
+  cassandra:
+    image: cassandra:4.1
+    container_name: library-cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=LibraryCluster
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-e", "describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: library-redis
+    ports:
+      - "6379:6379"
+  
+  library-service:
+    build:
+      context: ./ColumnarDBService
+    container_name: library-service
+    ports:
+      - "9060:9060"
+    depends_on:
+      cassandra:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+    environment:
+      # Cassandra
+      SPRING_DATA_CASSANDRA_CONTACT_POINTS: cassandra
+      SPRING_DATA_CASSANDRA_PORT: 9042
+      SPRING_DATA_CASSANDRA_KEYSPACE_NAME: library
+      SPRING_DATA_CASSANDRA_SCHEMA_ACTION: CREATE_IF_NOT_EXISTS
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_ENABLED: "true"
+      SERVER_PORT: 9060
   #
   # ── Elasticsearch + Search service ───────────────────────────────────────
   #
@@ -377,7 +435,7 @@ services:
       elasticsearch-db:
         condition: service_healthy
     volumes:
-      - /home/wartoffe/Desktop/projects/Nais/ElasticSearch/search/src/main/resources:/data
+      - ./ElasticSearch/search/src/main/resources:/data
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -406,16 +464,32 @@ services:
         curl -s "http://elasticsearch-db:9200/persons/_count"
     restart: "no"
 
+  elasticsearch-cache:
+    image: redis:7.2-alpine
+    container_name: elasticsearch-cache
+    ports:
+      - "6384:6379"
+    volumes:
+      - elasticsearch-cache-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   elasticsearch-service:
     build:
-      context: /home/wartoffe/Desktop/projects/Nais/ElasticSearch/search
+      context: ./ElasticSearch/search
       dockerfile: Dockerfile
     container_name: elasticsearch-service
     ports:
-      - "8084:8080"
+      - "8090:8080"
     environment:
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch-db:9200
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATA_REDIS_HOST=elasticsearch-cache
+      - SPRING_DATA_REDIS_PORT=6379
     depends_on:
       elasticsearch-db:
         condition: service_healthy
@@ -423,11 +497,28 @@ services:
         condition: service_completed_successfully
       eureka-server:
         condition: service_started
+      elasticsearch-cache:
+        condition: service_healthy
     restart: on-failure
 
-  #
-  # ── Redis + Request service ───────────────────────────────────────────────
-  #
+  request-db-postgres:
+    image: postgres:16-alpine
+    container_name: request-db-postgres
+    environment:
+      POSTGRES_DB: requestdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5430:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   request-db:
     image: redis:7.2-alpine
     container_name: request-db
@@ -444,26 +535,28 @@ services:
 
   request-service:
     build:
-      context: /home/wartoffe/Desktop/projects/Nais/requestService
+      context: ./requestService
       dockerfile: Dockerfile
     container_name: request-service
     ports:
       - "8087:8080"
     environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://request-db-postgres:5432/requestdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_DATA_REDIS_HOST: request-db
       SPRING_DATA_REDIS_PORT: 6379
       SERVER_PORT: 8080
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
+      request-db-postgres:
+        condition: service_healthy
       request-db:
         condition: service_healthy
       eureka-server:
         condition: service_started
     restart: on-failure
 
-#
-# ── Named volumes ─────────────────────────────────────────────────────────
-#
 volumes:
   ollama_data: {}
   neo4j_data:
@@ -472,6 +565,9 @@ volumes:
   es_data:
     driver: local
   redis-data:
+  postgres-data:
+  elasticsearch-cache-data:
+  redis_cache_data: {}
 
 networks:
   nais-net:

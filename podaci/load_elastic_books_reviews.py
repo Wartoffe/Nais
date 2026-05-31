@@ -29,14 +29,8 @@ BOOKS_MAPPING = {
             "edition":          {"type": "keyword"},
             "pages":            {"type": "integer"},
             "publisher":        {"type": "keyword"},
-            "publishDate": {
-                "type":   "date",
-                "format": "M/d/yyyy"
-            },
-            "firstPublishDate": {
-                "type":   "date",
-                "format": "M/d/yyyy"
-            },
+            "publishDate":      {"type": "keyword"},
+            "firstPublishDate": {"type": "keyword"},
             "awards":           {"type": "keyword"},
             "numRatings":       {"type": "integer"},
             "ratingsByStars":   {"type": "integer"},
@@ -62,22 +56,10 @@ REVIEWS_MAPPING = {
             "bookId":       {"type": "keyword"},
             "rating":       {"type": "integer"},
             "reviewText":   {"type": "text", "analyzer": "standard"},
-            "dateAdded": {
-                "type":   "date",
-                "format": "EEE MMM d HH:mm:ss Z yyyy"
-            },
-            "dateUpdated": {
-                "type":   "date",
-                "format": "EEE MMM d HH:mm:ss Z yyyy"
-            },
-            "readAt": {
-                "type":   "date",
-                "format": "EEE MMM d HH:mm:ss Z yyyy"
-            },
-            "startedAt": {
-                "type":   "date",
-                "format": "EEE MMM d HH:mm:ss Z yyyy"
-            },
+            "dateAdded":    {"type": "keyword"},
+            "dateUpdated":  {"type": "keyword"},
+            "readAt":       {"type": "keyword"},
+            "startedAt":    {"type": "keyword"},
             "nVotes":       {"type": "integer"},
             "nComments":    {"type": "integer"}
         }
@@ -234,7 +216,7 @@ def load_books(csv_path, batch_size=500, limit=10000):
 # UCITAVANJE RECENZIJA
 #
 
-def load_reviews(json_path, batch_size=500, limit=10000):
+def load_reviews(json_path, batch_size=500, limit=40000):
     print(f"\nUčitavam reviews iz: {json_path} (max {limit})")
     with open(json_path, encoding="utf-8-sig") as f:
         batch = []

@@ -8,7 +8,10 @@ import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaPredlogaZaNabav
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaStatusaPorudzbine;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.repository.LibraryInfluxRepositoryImpl;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Servis za sve InfluxDB operacije bibliotečkog sistema.
@@ -70,22 +73,42 @@ public class LibraryInfluxService {
     // ========= Složeni upiti ===============================
 
     @Cacheable(value = "avgIsporuka", key = "#days")
-    public List<FluxRecord> avgVremeIsporukePoDobavclja(int days) {
-        return repository.avgVremeIsporukePoDobavclja(days);
+    public List<Map<String, Object>> avgVremeIsporukePoDobavclja(int days) {
+        return toSerializableRows(repository.avgVremeIsporukePoDobavclja(days));
     }
 
     @Cacheable(value = "budzetMesecno", key = "#months")
-    public List<FluxRecord> budzetPoZanruMesecno(int months) {
-        return repository.budzetPoZanruMesecno(months);
+    public List<Map<String, Object>> budzetPoZanruMesecno(int months) {
+        return toSerializableRows(repository.budzetPoZanruMesecno(months));
     }
 
     @Cacheable(value = "odobreniPredloziPoZanru", key = "#days")
-    public List<FluxRecord> odobreniPredloziPoZanru(int days) {
-        return repository.odobreniPredloziPoZanru(days);
+    public List<Map<String, Object>> odobreniPredloziPoZanru(int days) {
+        return toSerializableRows(repository.odobreniPredloziPoZanru(days));
     }
 
     @Cacheable(value = "otkazivanja", key = "#days")
-    public List<FluxRecord> otkazivanjePoDobavclja(int days) {
-        return repository.otkazivanjePoDobavclja(days);
+    public List<Map<String, Object>> otkazivanjePoDobavclja(int days) {
+        return toSerializableRows(repository.otkazivanjePoDobavclja(days));
+    }
+
+    private List<Map<String, Object>> toSerializableRows(List<FluxRecord> records) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (FluxRecord record : records) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            record.getValues().forEach((key, value) -> row.put(key, normalizeValue(value)));
+            rows.add(row);
+        }
+        return rows;
+    }
+
+    private Object normalizeValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number || value instanceof Boolean || value instanceof String) {
+            return value;
+        }
+        return value.toString();
     }
 }

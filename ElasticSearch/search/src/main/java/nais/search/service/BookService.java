@@ -1,5 +1,6 @@
 package nais.search.service;
 
+import nais.search.cache.BookCacheRepository;
 import nais.search.dto.BookDto;
 import nais.search.enums.Format;
 import nais.search.model.Book;
@@ -14,7 +15,6 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 
@@ -28,21 +28,30 @@ public class BookService {
     private final BookRepository bookRepository;
     private final PersonRepository personRepository;
     private final ElasticsearchOperations esOps;
+    private final BookCacheRepository cache;
 
     public BookService(BookRepository bookRepository,
                        PersonRepository personRepository,
-                       ElasticsearchOperations esOps) {
+                       ElasticsearchOperations esOps,
+                       BookCacheRepository cache) {
         this.bookRepository = bookRepository;
         this.personRepository = personRepository;
         this.esOps = esOps;
+        this.cache = cache;
     }
 
     public Optional<Book> getBookByRecordId(String recordId) {
-        return bookRepository.findById(recordId);
+        return cache.get(recordId).map(Optional::of).orElseGet(() -> {
+            Optional<Book> fromEs = bookRepository.findById(recordId);
+            fromEs.ifPresent(cache::put);
+            return fromEs;
+        });
     }
 
     public Book createNewBook(Book book) {
-        return bookRepository.save(book);
+        Book saved = bookRepository.save(book);
+        cache.put(saved);
+        return saved;
     }
 
     public Book updateBook(String recordId, BookDto dto) {
@@ -73,11 +82,14 @@ public class BookService {
         if (dto.getSetting()       != null) book.setSetting(dto.getSetting());
         if (dto.getCharacters()    != null) book.setCharacters(dto.getCharacters());
 
-        return bookRepository.save(book);
+        Book updated = bookRepository.save(book);
+        cache.put(updated);
+        return updated;
     }
 
     public boolean deleteBook(String recordId) {
         bookRepository.deleteById(recordId);
+        cache.evict(recordId);
         return true;
     }
 

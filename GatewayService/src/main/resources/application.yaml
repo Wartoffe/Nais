@@ -37,3 +37,17 @@ spring:
           filters:
             - StripPrefix=1
 
+        - id: library-service
+          uri: lb://library-service
+          predicates:
+            - Path=/library-service/**
+          filters:
+            - StripPrefix=1
+
+        - id: elastic-search-books-reviews-service
+          uri: lb://elastic-search-books-reviews-service
+          predicates:
+            - Path=/elastic-search-books-reviews-service/**
+          filters:
+            - StripPrefix=1
+

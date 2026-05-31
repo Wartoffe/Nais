@@ -1,6 +1,5 @@
 package rs.ac.uns.acs.nais.TimeseriesDatabaseService.controller;
 
-import com.influxdb.query.FluxRecord;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +9,7 @@ import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaStatusaPorudzbi
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.service.LibraryInfluxService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/library-influx")
@@ -114,28 +114,28 @@ public class LibraryInfluxController {
 
     //Upit 1: Prosečno vreme isporuke po dobavljaču (POSLATA->ISPORUCENA).
     @GetMapping("/analytics/vreme-isporuke")
-    public ResponseEntity<List<FluxRecord>> avgVremeIsporuke(
+    public ResponseEntity<List<Map<String, Object>>> avgVremeIsporuke(
             @RequestParam(defaultValue = "90") int days) {
         return new ResponseEntity<>(service.avgVremeIsporukePoDobavclja(days), HttpStatus.OK);
     }
 
     //Upit 2: Dinamika trošenja budžeta po žanru, mesečno.
     @GetMapping("/analytics/budzet-mesecno")
-    public ResponseEntity<List<FluxRecord>> budzetMesecno(
+    public ResponseEntity<List<Map<String, Object>>> budzetMesecno(
             @RequestParam(defaultValue = "12") int months) {
         return new ResponseEntity<>(service.budzetPoZanruMesecno(months), HttpStatus.OK);
     }
 
     //Upit 3: Procenat odobrenih predloga po žanru
     @GetMapping("/analytics/odobreni-predlozi")
-    public ResponseEntity<List<FluxRecord>> odobreniPredlozi(
+    public ResponseEntity<List<Map<String, Object>>> odobreniPredlozi(
             @RequestParam(defaultValue = "365") int days) {
         return new ResponseEntity<>(service.odobreniPredloziPoZanru(days), HttpStatus.OK);
     }
 
     //Upit 4 : Analiza otkazivanja po dobavljaču.
     @GetMapping("/analytics/otkazivanje")
-    public ResponseEntity<List<FluxRecord>> otkazivanje(
+    public ResponseEntity<List<Map<String, Object>>> otkazivanje(
             @RequestParam(defaultValue = "180") int days) {
         return new ResponseEntity<>(service.otkazivanjePoDobavclja(days), HttpStatus.OK);
     }

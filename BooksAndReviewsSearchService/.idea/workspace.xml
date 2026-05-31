@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="92d70783-0cc8-4244-b66a-a1bc795fff82" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/controller/BookController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/controller/BookController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/controller/ReviewController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/controller/ReviewController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/model/Book.java" beforeDir="false" afterPath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/model/Book.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/service/impl/BookService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/service/impl/BookService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/service/impl/ReviewService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../BookAndReviewsSearchService/src/main/java/rs/ac/uns/acs/nais/ElasticSearchDatabaseService/service/impl/ReviewService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../GatewayService/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/../GatewayService/src/main/resources/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../podaci/load_elastic_books_reviews.py" beforeDir="false" afterPath="$PROJECT_DIR$/../podaci/load_elastic_books_reviews.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+        <option value="Interface" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="3EMePp4lDxGuQi8908w0wh7FxUc" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration name="ElasticSearchDatabaseServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="ElasticSearchDatabaseService" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="rs.ac.uns.acs.nais.ElasticSearchDatabaseService.ElasticSearchDatabaseServiceApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="jdk-22-openjdk-22-4caba194b151-f504ca98" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="92d70783-0cc8-4244-b66a-a1bc795fff82" name="Changes" comment="" />
+      <created>1779992846808</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1779992846808</updated>
+      <workItem from="1779992849483" duration="77000" />
+      <workItem from="1779998601558" duration="747000" />
+      <workItem from="1780127225521" duration="24000" />
+      <workItem from="1780144864064" duration="10941000" />
+      <workItem from="1780223686389" duration="3129000" />
+      <workItem from="1780227502462" duration="7333000" />
+      <workItem from="1780241926005" duration="612000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
