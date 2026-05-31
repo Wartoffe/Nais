@@ -333,7 +333,7 @@ services:
       elasticsearch-db:
         condition: service_healthy
     volumes:
-      - /home/wartoffe/Desktop/projects/Nais/ElasticSearch/search/src/main/resources:/data
+      - ./ElasticSearch/search/src/main/resources:/data
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -364,7 +364,7 @@ services:
 
   elasticsearch-service:
     build:
-      context: /home/wartoffe/Desktop/projects/Nais/ElasticSearch/search
+      context: ./ElasticSearch/search
       dockerfile: Dockerfile
     container_name: elasticsearch-service
     ports:
@@ -418,7 +418,7 @@ services:
 
   request-service:
     build:
-      context: /home/wartoffe/Desktop/projects/Nais/requestService
+      context: ./requestService
       dockerfile: Dockerfile
     container_name: request-service
     ports:
