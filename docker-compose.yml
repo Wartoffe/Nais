@@ -285,9 +285,13 @@ services:
         condition: service_started
       influxdb:
         condition: service_healthy
+      timeseries-redis:
+        condition: service_healthy
     environment:
       SPRING_INFLUX_URL: http://influxdb:8086
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_DATA_REDIS_HOST: timeseries-redis
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
       - "9070:8084"
 
@@ -314,7 +318,12 @@ services:
     image: redis:7-alpine
     container_name: timeseries-redis
     ports:
-      - "6380:6380"
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 
   #
