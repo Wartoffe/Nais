@@ -28,13 +28,14 @@ OLLAMA_URL="${OLLAMA_URL:-http://ollama:11434}"
     || echo ">>> [0/3] WARNING: pull failed, chat endpoints may not work."
   fi
 
-  echo ">>> [1/3] Running books RAG ingestion (skipped if already done)..."
-  sleep 45 
+  echo ">>> [1/3] Waiting for Milvus..."
+  python -c "from utils.wait_for_milvus import wait_for_milvus; wait_for_milvus('standalone', 19530)"
+
+  echo ">>> [2/3] Running books RAG ingestion (skipped if already done)..."
   # Executes a Python module to process and load books data into the database for RAG (Retrieval-Augmented Generation)
   python -m ingest.books_ingest || echo ">>> WARNING: books ingest failed, continuing..."
 
-  echo ">>> [2/3] Running book reviews ingestion (skipped if already done)..."
-  sleep 90
+  echo ">>> [3/3] Running book reviews ingestion (skipped if already done)..."
   # Executes a Python module to process and load book reviews data into the database
   python -m ingest.reviews_ingest || echo ">>> WARNING: reviews ingest failed, continuing..."
 
