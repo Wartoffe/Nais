@@ -1,5 +1,6 @@
 package nais.search.service;
 
+import nais.search.cache.PersonCacheRepository;
 import nais.search.dto.PersonDto;
 import nais.search.model.Person;
 import nais.search.repository.PersonRepository;
@@ -11,21 +12,30 @@ import java.util.Optional;
 public class PersonService {
 
     private final PersonRepository personRepository;
+    private final PersonCacheRepository cache;
 
-    public PersonService(PersonRepository personRepository) {
+    public PersonService(PersonRepository personRepository, PersonCacheRepository cache) {
         this.personRepository = personRepository;
+        this.cache = cache;
     }
 
     public Optional<Person> getPersonById(String personId) {
-        return personRepository.findById(personId);
+        return cache.get(personId).map(Optional::of).orElseGet(() -> {
+            Optional<Person> fromEs = personRepository.findById(personId);
+            fromEs.ifPresent(cache::put);
+            return fromEs;
+        });
     }
 
     public Person createNewPerson(Person person) {
-        return personRepository.save(person);
+        Person saved = personRepository.save(person);
+        cache.put(saved);
+        return saved;
     }
 
     public boolean deletePerson(String personId) {
         personRepository.deleteById(personId);
+        cache.evict(personId);
         return true;
     }
 
@@ -45,6 +55,8 @@ public class PersonService {
         if (dto.getBooks()        != null) person.setBooks(dto.getBooks());
         if (dto.getBio()          != null) person.setBio(dto.getBio());
 
-        return personRepository.save(person);
+        Person updated = personRepository.save(person);
+        cache.put(updated);
+        return updated;
     }
 }

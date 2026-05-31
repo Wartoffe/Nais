@@ -21,9 +21,6 @@ services:
         condition: service_started
     restart: on-failure
 
-  #
-  # ── Service Discovery ─────────────────────────────────────────────────────
-  #
   eureka-server:
     build:
       context: ./EurekaService
@@ -37,9 +34,6 @@ services:
       timeout: 10s
       retries: 5
 
-  #
-  # ── Gateway ───────────────────────────────────────────────────────────────
-  #
   gateway-api:
     build:
       context: ./GatewayService
@@ -52,9 +46,6 @@ services:
     ports:
       - "9003:9000"
 
-  #
-  # ── Milvus stack (shared) ─────────────────────────────────────────────────
-  #
   etcd:
     container_name: milvus-etcd
     image: quay.io/coreos/etcd:v3.5.25
@@ -116,9 +107,6 @@ services:
       minio:
         condition: service_healthy
 
-  #
-  # ── Ollama (shared LLM) ───────────────────────────────────────────────────
-  #
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -132,9 +120,6 @@ services:
       timeout: 10s
       retries: 12
 
-  #
-  # ── Nenad's vector-database-service ──────────────────────────────────────
-  #
   vector-database-service:
     build:
       context: ./VectorDatabaseService
@@ -186,9 +171,6 @@ services:
       standalone:
         condition: service_healthy
 
-  #
-  # ── Nenad's elastic-search-books-reviews-service ──────────────────────────
-  #
   elastic-search-books-reviews-service:
     build:
       context: ./BookAndReviewsSearchService
@@ -245,9 +227,6 @@ services:
     depends_on:
       - elasticsearchbooks
 
-  #
-  # ── Search service ────────────────────────────────────────────────────────
-  #
   search-service:
     build:
       context: ./SearchServiceV/search-service
@@ -267,9 +246,6 @@ services:
         condition: service_started
     restart: on-failure
 
-  #
-  # ── Neo4j + Recommendation service ───────────────────────────────────────
-  #
   neo4j:
     image: neo4j:latest
     ports:
@@ -305,9 +281,6 @@ services:
         condition: service_started
     restart: on-failure
 
-  #
-  # ── Elasticsearch + Search service ───────────────────────────────────────
-  #
   elasticsearch-db:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.0.1
     container_name: elasticsearch-db
@@ -362,6 +335,20 @@ services:
         curl -s "http://elasticsearch-db:9200/persons/_count"
     restart: "no"
 
+  elasticsearch-cache:
+    image: redis:7.2-alpine
+    container_name: elasticsearch-cache
+    ports:
+      - "6384:6379"
+    volumes:
+      - elasticsearch-cache-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   elasticsearch-service:
     build:
       context: ./ElasticSearch/search
@@ -372,6 +359,8 @@ services:
     environment:
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch-db:9200
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATA_REDIS_HOST=elasticsearch-cache
+      - SPRING_DATA_REDIS_PORT=6379
     depends_on:
       elasticsearch-db:
         condition: service_healthy
@@ -379,11 +368,10 @@ services:
         condition: service_completed_successfully
       eureka-server:
         condition: service_started
+      elasticsearch-cache:
+        condition: service_healthy
     restart: on-failure
 
-  #
-  # ── Redis + PostgreSQL + Request service ──────────────────────────────────
-  #
   request-db-postgres:
     image: postgres:16-alpine
     container_name: request-db-postgres
@@ -440,9 +428,6 @@ services:
         condition: service_started
     restart: on-failure
 
-#
-# ── Named volumes ─────────────────────────────────────────────────────────
-#
 volumes:
   ollama_data: {}
   neo4j_data:
@@ -451,6 +436,7 @@ volumes:
     driver: local
   redis-data:
   postgres-data:
+  elasticsearch-cache-data:
 
 networks:
   nais-net:
