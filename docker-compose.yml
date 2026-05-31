@@ -185,19 +185,19 @@ services:
     depends_on:
       standalone:
         condition: service_healthy
-  
+
   #
   # ── Nenad's elastic-search-books-reviews-service ──────────────────────────
   #
   elastic-search-books-reviews-service:
-    build: 
+    build:
       context: ./BookAndReviewsSearchService
       dockerfile: Dockerfile
     image: elastic-search-service:latest
     restart: on-failure
     depends_on:
       eureka-server:
-       condition: service_started
+        condition: service_started
       elasticsearchbooks:
         condition: service_healthy
     environment:
@@ -224,7 +224,7 @@ services:
       interval: 20s
       timeout: 10s
       retries: 5
-  
+
   elasticsearchbooks-init:
     image: python:3.11-slim
     depends_on:
@@ -382,8 +382,26 @@ services:
     restart: on-failure
 
   #
-  # ── Redis + Request service ───────────────────────────────────────────────
+  # ── Redis + PostgreSQL + Request service ──────────────────────────────────
   #
+  request-db-postgres:
+    image: postgres:16-alpine
+    container_name: request-db-postgres
+    environment:
+      POSTGRES_DB: requestdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5430:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   request-db:
     image: redis:7.2-alpine
     container_name: request-db
@@ -406,11 +424,16 @@ services:
     ports:
       - "8086:8080"
     environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://request-db-postgres:5432/requestdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_DATA_REDIS_HOST: request-db
       SPRING_DATA_REDIS_PORT: 6379
       SERVER_PORT: 8080
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     depends_on:
+      request-db-postgres:
+        condition: service_healthy
       request-db:
         condition: service_healthy
       eureka-server:
@@ -427,6 +450,7 @@ volumes:
   es_data:
     driver: local
   redis-data:
+  postgres-data:
 
 networks:
   nais-net:
