@@ -368,7 +368,7 @@ services:
       dockerfile: Dockerfile
     container_name: elasticsearch-service
     ports:
-      - "8084:8080"
+      - "8090:8080"
     environment:
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch-db:9200
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
