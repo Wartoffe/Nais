@@ -8,7 +8,9 @@
       "version": "2.0.0"
     }
   ],
-  "annotations": { "list": [] },
+  "annotations": {
+    "list": []
+  },
   "description": "Izveštaj biblioteke – Prosta sekcija: Pozajmice u datumskom opsegu",
   "editable": true,
   "fiscalYearStartMonth": 0,
@@ -16,26 +18,40 @@
   "id": null,
   "links": [],
   "panels": [
-
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "id": 10,
       "title": " PROSTA SEKCIJA – Pozajmice u odabranom datumskom opsegu",
       "type": "row"
     },
-
     {
-      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_LIBRARYAPI}" },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_LIBRARYAPI}"
+      },
       "description": "Ukupan broj pozajmica pronađenih u selektovanom periodu.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null },
-              { "color": "green", "value": 1 }
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
             ]
           },
           "unit": "short",
@@ -43,85 +59,148 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
       "id": 1,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": { "calcs": ["count"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "count"
+          ],
+          "fields": "",
+          "values": false
+        },
         "textMode": "auto"
       },
       "title": "Ukupno pozajmica",
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_LIBRARYAPI}" },
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_LIBRARYAPI}"
+          },
           "refId": "A",
           "type": "json",
           "source": "url",
           "format": "table",
-          "url": "http://library-service:9060/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
+          "url": "http://library-service:9060/loans/range?from=${__from:date:YYYY-MM-DD}&to=${__to:date:YYYY-MM-DD}",
           "root_selector": "",
           "columns": [
-            { "selector": "loanId",          "text": "ID Pozajmice",  "type": "string" }
-          ]
+            {
+              "selector": "loanId",
+              "text": "ID Pozajmice",
+              "type": "string"
+            }
+          ],
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          }
         }
       ]
     },
-
     {
-      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_LIBRARYAPI}" },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_LIBRARYAPI}"
+      },
       "description": "Broj pozajmica koje su još uvek aktivne (knjiga nije vraćena).",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 5 },
-              { "color": "red", "value": 15 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 15
+              }
             ]
           },
           "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
       "id": 2,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": { "calcs": ["count"], "fields": "/^Aktivne$/", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "count"
+          ],
+          "fields": "/^Aktivne$/",
+          "values": false
+        },
         "textMode": "auto"
       },
       "title": "Aktivne pozajmice",
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_LIBRARYAPI}" },
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_LIBRARYAPI}"
+          },
           "refId": "B",
           "type": "json",
           "source": "url",
           "format": "table",
-          "url": "http://library-service:9060/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
+          "url": "http://library-service:9060/loans/range?from=${__from:date:YYYY-MM-DD}&to=${__to:date:YYYY-MM-DD}",
           "root_selector": "",
           "columns": [
-            { "selector": "returned", "text": "Aktivne", "type": "boolean" }
+            {
+              "selector": "returned",
+              "text": "Aktivne",
+              "type": "boolean"
+            }
           ],
           "filters": [
-            { "field": "returned", "operator": "eq", "value": false }
-          ]
+            {
+              "field": "returned",
+              "operator": "eq",
+              "value": false
+            }
+          ],
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          }
         }
       ]
     },
-
     {
-      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_LIBRARYAPI}" },
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_LIBRARYAPI}"
+      },
       "description": "Tabela svih pozajmica u odabranom datumskom opsegu. Kolone: naslov knjige, član, datum pozajmice, rok vraćanja, status.",
       "fieldConfig": {
         "defaults": {
@@ -134,64 +213,162 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "Status" },
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
             "properties": [
               {
                 "id": "mappings",
                 "value": [
-                  { "type": "value", "options": { "true":  { "text": "✅ Vraćena", "color": "green" } } },
-                  { "type": "value", "options": { "false": { "text": "⏳ Aktivna", "color": "yellow" } } }
+                  {
+                    "type": "value",
+                    "options": {
+                      "true": {
+                        "text": "✅ Vraćena",
+                        "color": "green"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "false": {
+                        "text": "⏳ Aktivna",
+                        "color": "yellow"
+                      }
+                    }
+                  }
                 ]
               },
-              { "id": "custom.displayMode", "value": "color-background" }
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "Datum pozajmice" },
-            "properties": [{ "id": "unit", "value": "dateTimeAsIso" }]
+            "matcher": {
+              "id": "byName",
+              "options": "Datum pozajmice"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "Rok vraćanja" },
-            "properties": [{ "id": "unit", "value": "dateTimeAsIso" }]
+            "matcher": {
+              "id": "byName",
+              "options": "Rok vraćanja"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
           }
         ]
       },
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 5 },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
       "id": 3,
       "options": {
-        "footer": { "show": true, "reducer": ["count"], "fields": ["ID Pozajmice"] },
+        "footer": {
+          "show": true,
+          "reducer": [
+            "count"
+          ],
+          "fields": [
+            "ID Pozajmice"
+          ]
+        },
         "showHeader": true,
-        "sortBy": [{ "displayName": "Datum pozajmice", "desc": true }]
+        "sortBy": [
+          {
+            "displayName": "Datum pozajmice",
+            "desc": true
+          }
+        ]
       },
       "title": "Lista pozajmica",
       "type": "table",
       "targets": [
         {
-          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_LIBRARYAPI}" },
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_LIBRARYAPI}"
+          },
           "refId": "C",
           "type": "json",
           "source": "url",
           "format": "table",
-          "url": "http://library-service:9060/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
+          "url": "http://library-service:9060/loans/range?from=${__from:date:YYYY-MM-DD}&to=${__to:date:YYYY-MM-DD}",
           "root_selector": "",
           "columns": [
-            { "selector": "loanId",          "text": "ID Pozajmice",    "type": "string" },
-            { "selector": "bookTitle",        "text": "Naslov knjige",   "type": "string" },
-            { "selector": "bookGenre",        "text": "Žanr",            "type": "string" },
-            { "selector": "memberName",       "text": "Član",            "type": "string" },
-            { "selector": "loanDate",         "text": "Datum pozajmice", "type": "string" },
-            { "selector": "dueDate",          "text": "Rok vraćanja",    "type": "string" },
-            { "selector": "returned",         "text": "Status",          "type": "string" },
-            { "selector": "loanDurationDays", "text": "Trajanje (dana)", "type": "number" }
-          ]
+            {
+              "selector": "loanId",
+              "text": "ID Pozajmice",
+              "type": "string"
+            },
+            {
+              "selector": "bookTitle",
+              "text": "Naslov knjige",
+              "type": "string"
+            },
+            {
+              "selector": "bookGenre",
+              "text": "Žanr",
+              "type": "string"
+            },
+            {
+              "selector": "memberName",
+              "text": "Član",
+              "type": "string"
+            },
+            {
+              "selector": "loanDate",
+              "text": "Datum pozajmice",
+              "type": "string"
+            },
+            {
+              "selector": "dueDate",
+              "text": "Rok vraćanja",
+              "type": "string"
+            },
+            {
+              "selector": "returned",
+              "text": "Status",
+              "type": "string"
+            },
+            {
+              "selector": "loanDurationDays",
+              "text": "Trajanje (dana)",
+              "type": "number"
+            }
+          ],
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          }
         }
       ]
     }
-
   ],
   "refresh": "30s",
   "schemaVersion": 38,
-  "tags": ["biblioteka", "pozajmice", "izvestaj"],
+  "tags": [
+    "biblioteka",
+    "pozajmice",
+    "izvestaj"
+  ],
   "templating": {
     "list": [
       {
@@ -209,14 +386,30 @@
       },
       {
         "name": "from",
-        "label": "Od datuma",
+        "label": "Od datuma (info)",
+        "description": "Informativno: stvarni opseg upita određuje Grafana time picker gore desno (koristi se $__from/$__to u upitima).",
         "type": "custom",
-        "current": { "text": "now-30d", "value": "now-30d" },
+        "current": {
+          "text": "now-30d",
+          "value": "now-30d"
+        },
         "options": [
-          { "text": "Poslednja nedelja",  "value": "now-7d"  },
-          { "text": "Poslednji mesec",    "value": "now-30d" },
-          { "text": "Poslednja 3 meseca","value": "now-90d" },
-          { "text": "Poslednja godina",   "value": "now-1y"  }
+          {
+            "text": "Poslednja nedelja",
+            "value": "now-7d"
+          },
+          {
+            "text": "Poslednji mesec",
+            "value": "now-30d"
+          },
+          {
+            "text": "Poslednja 3 meseca",
+            "value": "now-90d"
+          },
+          {
+            "text": "Poslednja godina",
+            "value": "now-1y"
+          }
         ],
         "hide": 0,
         "includeAll": false,
@@ -225,11 +418,18 @@
       },
       {
         "name": "to",
-        "label": "Do datuma",
+        "label": "Do datuma (info)",
+        "description": "Informativno: stvarni opseg upita određuje Grafana time picker gore desno (koristi se $__from/$__to u upitima).",
         "type": "custom",
-        "current": { "text": "Danas", "value": "now" },
+        "current": {
+          "text": "Danas",
+          "value": "now"
+        },
         "options": [
-          { "text": "Danas", "value": "now" }
+          {
+            "text": "Danas",
+            "value": "now"
+          }
         ],
         "hide": 0,
         "includeAll": false,
@@ -238,7 +438,10 @@
       }
     ]
   },
-  "time": { "from": "now-30d", "to": "now" },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "browser",
   "title": "Biblioteka – Pozajmice u datumskom opsegu",
