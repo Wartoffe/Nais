@@ -62,7 +62,7 @@
           "type": "json",
           "source": "url",
           "format": "table",
-          "url": "/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
+          "url": "http://library-service:9060/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
           "root_selector": "",
           "columns": [
             { "selector": "loanId",          "text": "ID Pozajmice",  "type": "string" }
@@ -108,13 +108,13 @@
           "type": "json",
           "source": "url",
           "format": "table",
-          "url": "/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
+          "url": "http://library-service:9060/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
           "root_selector": "",
           "columns": [
             { "selector": "returned", "text": "Aktivne", "type": "boolean" }
           ],
           "filters": [
-            { "field": "returned", "operator": "eq", "value": "false" }
+            { "field": "returned", "operator": "eq", "value": false }
           ]
         }
       ]
@@ -172,15 +172,15 @@
           "type": "json",
           "source": "url",
           "format": "table",
-          "url": "/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
+          "url": "http://library-service:9060/loans/range?from=${from:date:YYYY-MM-DD}&to=${to:date:YYYY-MM-DD}",
           "root_selector": "",
           "columns": [
             { "selector": "loanId",          "text": "ID Pozajmice",    "type": "string" },
             { "selector": "bookTitle",        "text": "Naslov knjige",   "type": "string" },
             { "selector": "bookGenre",        "text": "Žanr",            "type": "string" },
             { "selector": "memberName",       "text": "Član",            "type": "string" },
-            { "selector": "loanDate",         "text": "Datum pozajmice", "type": "timestamp_epoch" },
-            { "selector": "dueDate",          "text": "Rok vraćanja",    "type": "timestamp_epoch" },
+            { "selector": "loanDate",         "text": "Datum pozajmice", "type": "string" },
+            { "selector": "dueDate",          "text": "Rok vraćanja",    "type": "string" },
             { "selector": "returned",         "text": "Status",          "type": "string" },
             { "selector": "loanDurationDays", "text": "Trajanje (dana)", "type": "number" }
           ]
