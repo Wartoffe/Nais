@@ -20,4 +20,7 @@ public interface BookByGenreRepository extends CassandraRepository<BookByGenre, 
     Long countByGenre(String genre);
     @Query("DELETE FROM books_by_genre WHERE genre = ?0 AND title = ?1 AND book_id = ?2")
     void deleteBook(String genre, String title, UUID bookId);
+
+    @Query("SELECT * FROM books_by_genre WHERE genre = ?0 AND title = ?1 AND book_id = ?2")
+    BookByGenre findByGenreAndTitleAndBookId(String genre, String title, UUID bookId);
 }

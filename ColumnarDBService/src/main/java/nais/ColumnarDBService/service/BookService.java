@@ -1,6 +1,7 @@
 package nais.ColumnarDBService.service;
 
 import nais.ColumnarDBService.dto.BookDTO;
+import nais.ColumnarDBService.entity.BookByGenre;
 import nais.ColumnarDBService.mapper.LibraryMapper;
 import nais.ColumnarDBService.repository.BookByGenreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,28 @@ public class BookService {
     }
     public void deleteBook(String genre, String title, UUID bookId) {
         bookByGenreRepository.deleteBook(genre, title, bookId);
+    }
+    public BookDTO decreaseAvailableCopies(String genre, String title, UUID bookId){
+        BookByGenre book= bookByGenreRepository.findByGenreAndTitleAndBookId(genre, title,bookId);
+        if (book==null) throw new RuntimeException("Knjiga nije pronadjena");
+
+        if(book.getAvailableCopies()<=0){
+            throw new RuntimeException("Nema dostupnih primeraka knjige");
+        }
+        book.setAvailableCopies(book.getAvailableCopies()-1);
+        bookByGenreRepository.save(book);
+        return mapper.bookByGenreToBookDTO(book);
+    }
+
+    public BookDTO increaseAvailableCopies (String genre, String title, UUID bookId){
+        BookByGenre book= bookByGenreRepository.findByGenreAndTitleAndBookId(genre, title, bookId);
+        if (book==null) throw new RuntimeException("Knjiga nije pronadjena");
+        if(book.getAvailableCopies()<book.getTotalCopies()){
+            book.setAvailableCopies(book.getAvailableCopies()+1);
+            bookByGenreRepository.save(book);
+        }
+        return  mapper.bookByGenreToBookDTO(book);
+
     }
 
 

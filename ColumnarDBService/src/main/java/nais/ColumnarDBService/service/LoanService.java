@@ -39,9 +39,13 @@ public class LoanService {
 
     @Autowired
     private LibraryMapper mapper;
+    @Autowired
+    private BookService bookService;
 
     @CachePut(value = "loans", key = "#result.loanId")
     public LoanDTO createLoan(LoanDTO dto) {
+
+        bookService.decreaseAvailableCopies(dto.getBookGenre(), dto.getBookTitle(), dto.getBookId());
         dto.setLoanId(UUID.randomUUID());
         dto.setLoanDate(LocalDateTime.now());
         dto.setDueDate(LocalDateTime.now().plusDays(LOAN_PERIOD_DAYS));
@@ -117,7 +121,7 @@ public class LoanService {
         loanByMember.setLoanDurationDays(durationDays);
         loanByMemberRepository.save(loanByMember);
 
-
+        bookService.increaseAvailableCopies(loanByMember.getBookGenre(), loanByMember.getBookTitle(), loanByMember.getBookId());
         loanByBookRepository.findByBookId(request.getBookId())
                 .stream()
                 .filter(l -> l.getLoanId().equals(request.getLoanId()))
