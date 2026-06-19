@@ -1,12 +1,15 @@
 package nais.ColumnarDBService.service;
 
+import nais.ColumnarDBService.dto.BookDTO;
 import nais.ColumnarDBService.dto.LoanDTO;
 import nais.ColumnarDBService.dto.ReturnDTO;
 import nais.ColumnarDBService.dto.ReturnRequestDTO;
+import nais.ColumnarDBService.entity.BookByGenre;
 import nais.ColumnarDBService.entity.LoanByBook;
 import nais.ColumnarDBService.entity.LoanByMember;
 import nais.ColumnarDBService.entity.ReturnByDate;
 import nais.ColumnarDBService.mapper.LibraryMapper;
+import nais.ColumnarDBService.repository.BookByGenreRepository;
 import nais.ColumnarDBService.repository.LoanByBookRepository;
 import nais.ColumnarDBService.repository.LoanByMemberRepository;
 import nais.ColumnarDBService.repository.ReturnByDateRepository;
@@ -35,6 +38,9 @@ public class LoanService {
     private LoanByBookRepository loanByBookRepository;
 
     @Autowired
+    private BookByGenreRepository bookByGenreRepository;
+
+    @Autowired
     private ReturnByDateRepository returnByDateRepository;
 
     @Autowired
@@ -56,6 +62,13 @@ public class LoanService {
         loanByMemberRepository.save(loanByMember);
         LoanByBook loanByBook = mapper.loanDTOToLoanByBook(dto);
         loanByBookRepository.save(loanByBook);
+
+        UUID bookUUID= dto.getBookId();
+        BookByGenre book= bookByGenreRepository.findByBookId(bookUUID);
+
+        if(book.getAvailableCopies()==0){
+
+        }
 
         return dto;
     }
@@ -101,6 +114,8 @@ public class LoanService {
         return loanByBookRepository.countByBookId(bookId);
     }
     public ReturnDTO returnBook(ReturnRequestDTO request) {
+
+
         LocalDateTime now = LocalDateTime.now();
         String todayStr = LocalDate.now().toString();
 
@@ -114,12 +129,18 @@ public class LoanService {
                         "Pozajmica nije pronađena za člana: " + request.getMemberId()));
 
         int durationDays = (int) ChronoUnit.DAYS.between(loanByMember.getLoanDate(), now);
+        UUID bookUUID= request.getBookId();
+        BookByGenre book= bookByGenreRepository.findByBookId(bookUUID);
 
+        if(book.getAvailableCopies()==0){
+
+        }
 
         loanByMember.setReturned(true);
         loanByMember.setReturnDate(now);
         loanByMember.setLoanDurationDays(durationDays);
         loanByMemberRepository.save(loanByMember);
+
 
         bookService.increaseAvailableCopies(loanByMember.getBookGenre(), loanByMember.getBookTitle(), loanByMember.getBookId());
         loanByBookRepository.findByBookId(request.getBookId())
@@ -153,6 +174,19 @@ public class LoanService {
                            UUID bookId) {
         loanByMemberRepository.deleteLoan(memberId, loanDate, loanId);
         loanByBookRepository.deleteLoan(bookId, loanDate, loanId);
+    }
+
+    public List<LoanDTO> getLoansByDateRange(LocalDate from, LocalDate to) {
+        LocalDateTime fromDT = from.atStartOfDay();
+        LocalDateTime toDT   = to.atTime(23, 59, 59);
+
+        return loanByMemberRepository.findAll()
+                .stream()
+                .filter(l -> l.getLoanDate() != null
+                        && !l.getLoanDate().isBefore(fromDT)
+                        && !l.getLoanDate().isAfter(toDT))
+                .map(mapper::loanByMemberToLoanDTO)
+                .collect(Collectors.toList());
     }
 
 }

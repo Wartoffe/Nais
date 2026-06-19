@@ -15,6 +15,9 @@ public interface BookByGenreRepository extends CassandraRepository<BookByGenre, 
     @Query("SELECT * FROM books_by_genre WHERE genre = ?0")
     List<BookByGenre> findByGenre(String genre);
 
+    @Query("SELECT * FROM books_by_genre WHERE book_id = ?0")
+    BookByGenre findByBookId(UUID bookId);
+
     //broj knjiga u datom zanru
     @Query("SELECT COUNT(*) FROM books_by_genre WHERE genre = ?0")
     Long countByGenre(String genre);
