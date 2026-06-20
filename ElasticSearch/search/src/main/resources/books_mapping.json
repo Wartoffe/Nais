@@ -72,6 +72,9 @@
       },
       "characters": {
         "type": "keyword"
+      },
+      "hidden": {
+        "type": "boolean"
       }
     }
   }

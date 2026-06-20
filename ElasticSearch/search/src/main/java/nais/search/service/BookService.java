@@ -3,6 +3,7 @@ package nais.search.service;
 import nais.search.cache.BookCacheRepository;
 import nais.search.dto.BookDto;
 import nais.search.enums.Format;
+import nais.search.exception.BookNotFoundException;
 import nais.search.model.Book;
 import nais.search.model.Person;
 import nais.search.repository.BookRepository;
@@ -18,7 +19,10 @@ import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -40,12 +44,18 @@ public class BookService {
         this.cache = cache;
     }
 
+    /**
+     * Logically deleted (hidden) books are never returned by a direct
+     * lookup -- they behave as if they don't exist, even though the
+     * document is still physically present in the index.
+     */
     public Optional<Book> getBookByRecordId(String recordId) {
-        return cache.get(recordId).map(Optional::of).orElseGet(() -> {
+        Optional<Book> result = cache.get(recordId).map(Optional::of).orElseGet(() -> {
             Optional<Book> fromEs = bookRepository.findById(recordId);
             fromEs.ifPresent(cache::put);
             return fromEs;
         });
+        return result.filter(book -> !Boolean.TRUE.equals(book.getHidden()));
     }
 
     public Book createNewBook(Book book) {
@@ -94,11 +104,13 @@ public class BookService {
     }
 
     public Page<Book> fullTextSearch(String query, Pageable pageable) {
-        Criteria criteria = new Criteria("title").matches(query)
+        Criteria textCriteria = new Criteria("title").matches(query)
                 .or("originalTitle").matches(query)
                 .or("subtitle").matches(query)
                 .or("textExcerpt").matches(query)
                 .or("description").matches(query);
+
+        Criteria criteria = new Criteria("hidden").is(false).and(textCriteria);
 
         Query searchQuery = new CriteriaQuery(criteria).setPageable(pageable);
         SearchHits<Book> hits = esOps.search(searchQuery, Book.class);
@@ -128,9 +140,11 @@ public class BookService {
         if (character != null) { criteria = hasCriteria ? criteria.and("characters").is(character) : new Criteria("characters").is(character); hasCriteria = true; }
         if (isbn      != null) { criteria = hasCriteria ? criteria.and("isbns").is(isbn)           : new Criteria("isbns").is(isbn);           hasCriteria = true; }
 
-        if (!hasCriteria) return bookRepository.findAll(pageable);
+        Criteria visibleCriteria = hasCriteria
+                ? new Criteria("hidden").is(false).and(criteria)
+                : new Criteria("hidden").is(false);
 
-        Query searchQuery = new CriteriaQuery(criteria).setPageable(pageable);
+        Query searchQuery = new CriteriaQuery(visibleCriteria).setPageable(pageable);
         SearchHits<Book> hits = esOps.search(searchQuery, Book.class);
 
         List<Book> books = hits.stream()
@@ -172,7 +186,9 @@ public class BookService {
             bookCriteria = bookCriteria.or("authors").is(personIds.get(i));
         }
 
-        Query bookQuery = new CriteriaQuery(bookCriteria).setPageable(pageable);
+        Criteria visibleBookCriteria = new Criteria("hidden").is(false).and(bookCriteria);
+
+        Query bookQuery = new CriteriaQuery(visibleBookCriteria).setPageable(pageable);
         SearchHits<Book> bookHits = esOps.search(bookQuery, Book.class);
 
         List<Book> books = bookHits.stream()
@@ -180,5 +196,114 @@ public class BookService {
                 .collect(Collectors.toList());
 
         return PageableExecutionUtils.getPage(books, pageable, bookHits::getTotalHits);
+    }
+
+    // ── Logical deletion (hide / unhide) ──────────────────────────────────
+    //
+    // "Logical deletion" here never removes a document from the index, it
+    // only flips the `hidden` flag. Every read path above already filters
+    // hidden=true out, so a hidden book behaves as if it doesn't exist for
+    // anyone querying the engine, while the document itself is preserved.
+
+    /**
+     * Hides a single book (admin / manual use).
+     */
+    public Optional<Book> hideBookByRecordId(String recordId) {
+        return setHiddenByRecordId(recordId, true);
+    }
+
+    /**
+     * Reverses a logical deletion for a single book (admin / manual use).
+     */
+    public Optional<Book> unhideBookByRecordId(String recordId) {
+        return setHiddenByRecordId(recordId, false);
+    }
+
+    private Optional<Book> setHiddenByRecordId(String recordId, boolean hidden) {
+        Optional<Book> existing = bookRepository.findById(recordId);
+        if (existing.isEmpty()) return Optional.empty();
+
+        Book book = existing.get();
+        book.setHidden(hidden);
+        Book saved = bookRepository.save(book);
+
+        if (hidden) {
+            cache.evict(saved.getRecordId());
+        } else {
+            cache.put(saved);
+        }
+        return Optional.of(saved);
+    }
+
+    /**
+     * Saga entry point used when ColumnarDBService.createLoan drops a
+     * book's available copies to zero: hides every Elasticsearch document
+     * matching the given ISBN.
+     * <p>
+     * If more than one document matches the ISBN and a save fails partway
+     * through the batch, every document already flipped in this call is
+     * rolled back to its original hidden state before the exception is
+     * propagated -- this is the local rollback/compensation for this
+     * function.
+     *
+     * @throws BookNotFoundException if no book in the index has this ISBN
+     */
+    public List<Book> hideBooksByIsbn(String isbn) {
+        return setHiddenByIsbn(isbn, true);
+    }
+
+    /**
+     * Saga entry point used when ColumnarDBService.returnBook raises a
+     * book's available copies from zero: unhides every Elasticsearch
+     * document matching the given ISBN. Same local rollback guarantee as
+     * {@link #hideBooksByIsbn(String)}.
+     *
+     * @throws BookNotFoundException if no book in the index has this ISBN
+     */
+    public List<Book> unhideBooksByIsbn(String isbn) {
+        return setHiddenByIsbn(isbn, false);
+    }
+
+    private List<Book> setHiddenByIsbn(String isbn, boolean hidden) {
+        List<Book> matches = bookRepository.findByIsbns(isbn, Pageable.unpaged()).getContent();
+        if (matches.isEmpty()) {
+            throw new BookNotFoundException("No book found in Elasticsearch with ISBN " + isbn);
+        }
+
+        // Snapshot original state up front so we can compensate (roll back)
+        // any document already saved in this batch if a later one fails.
+        Map<String, Boolean> originalHiddenByRecordId = new HashMap<>();
+        for (Book book : matches) {
+            originalHiddenByRecordId.put(book.getRecordId(), book.getHidden());
+        }
+
+        List<Book> saved = new ArrayList<>();
+        try {
+            for (Book book : matches) {
+                book.setHidden(hidden);
+                saved.add(bookRepository.save(book));
+            }
+        } catch (RuntimeException ex) {
+            for (Book alreadySaved : saved) {
+                try {
+                    alreadySaved.setHidden(originalHiddenByRecordId.get(alreadySaved.getRecordId()));
+                    bookRepository.save(alreadySaved);
+                } catch (RuntimeException rollbackFailure) {
+                    // Best-effort local compensation: nothing more we can do
+                    // here; the inconsistency will surface to an operator via
+                    // the failed saga event raised by the caller.
+                }
+            }
+            throw ex;
+        }
+
+        saved.forEach(book -> {
+            if (hidden) {
+                cache.evict(book.getRecordId());
+            } else {
+                cache.put(book);
+            }
+        });
+        return saved;
     }
 }

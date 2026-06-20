@@ -314,6 +314,25 @@ services:
     container_name: library-redis
     ports:
       - "6379:6379"
+
+  #
+  # ── RabbitMQ (choreography saga broker) ──────────────────────────────────
+  #
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: library-rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
   
   library-service:
     build:
@@ -328,6 +347,8 @@ services:
         condition: service_started
       eureka-server:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       # Cassandra
       SPRING_DATA_CASSANDRA_CONTACT_POINTS: cassandra
@@ -339,6 +360,11 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       EUREKA_CLIENT_ENABLED: "true"
       SERVER_PORT: 9060
+      # RabbitMQ (choreography saga)
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
   #
   # ── Elasticsearch + Search service ───────────────────────────────────────
   #
@@ -386,6 +412,14 @@ services:
           -H "Content-Type: application/x-ndjson" \
           --data-binary @/data/books_bulk.ndjson
 
+        echo "==> Refreshing books index..."
+        curl -s -X POST "http://elasticsearch-db:9200/books/_refresh"
+
+        echo "==> Backfilling hidden=false on imported books..."
+        curl -s -X POST "http://elasticsearch-db:9200/books/_update_by_query?conflicts=proceed" \
+          -H "Content-Type: application/json" \
+          -d '{"script": {"source": "ctx._source.hidden = false", "lang": "painless"}, "query": {"match_all": {}}}'
+
         echo "==> Importing persons..."
         curl -s -X POST "http://elasticsearch-db:9200/_bulk" \
           -H "Content-Type: application/x-ndjson" \
@@ -422,6 +456,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
       - SPRING_DATA_REDIS_HOST=elasticsearch-cache
       - SPRING_DATA_REDIS_PORT=6379
+      # RabbitMQ (choreography saga)
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
     depends_on:
       elasticsearch-db:
         condition: service_healthy
@@ -430,6 +469,8 @@ services:
       eureka-server:
         condition: service_started
       elasticsearch-cache:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     restart: on-failure
 
@@ -499,6 +540,7 @@ volumes:
   postgres-data:
   elasticsearch-cache-data:
   grafana_data:
+  rabbitmq_data:
 
 networks:
   nais-net:
