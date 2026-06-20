@@ -1,9 +1,6 @@
 package nais.ColumnarDBService.controller;
 
-import nais.ColumnarDBService.dto.LoanDTO;
-import nais.ColumnarDBService.dto.MemberDTO;
-import nais.ColumnarDBService.dto.ReturnDTO;
-import nais.ColumnarDBService.dto.ReturnRequestDTO;
+import nais.ColumnarDBService.dto.*;
 import nais.ColumnarDBService.service.LoanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -93,6 +90,14 @@ public class LoanController {
         List<LoanDTO> loans = loanService.getLoansByDateRange(from, to);
         return ResponseEntity.ok(loans);
     }
+
+    @GetMapping("/top-borrowed")
+    public ResponseEntity<List<TopBorrowedBookDTO>> getTopBorrowedBooksByGenre(
+            @RequestParam String genre,
+            @RequestParam(defaultValue = "2") int limit){
+        return ResponseEntity.ok(loanService.getTopBorrowedBooksByGenre(genre,limit));
+    }
+
 
 
 }
