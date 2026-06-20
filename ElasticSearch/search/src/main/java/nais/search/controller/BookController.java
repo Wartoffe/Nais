@@ -57,6 +57,22 @@ public class BookController {
         }
     }
 
+    // Logical delete / undelete (admin / manual override -- the saga
+    // listener is what normally drives these via RabbitMQ).
+    @PatchMapping("/{recordId}/hide")
+    public ResponseEntity<?> hideBookById(@PathVariable String recordId) {
+        return bookService.hideBookByRecordId(recordId)
+                .map(book -> ResponseEntity.ok("Book has been hidden successfully"))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Book not found"));
+    }
+
+    @PatchMapping("/{recordId}/unhide")
+    public ResponseEntity<?> unhideBookById(@PathVariable String recordId) {
+        return bookService.unhideBookByRecordId(recordId)
+                .map(book -> ResponseEntity.ok("Book has been unhidden successfully"))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Book not found"));
+    }
+
     @GetMapping("/fulltext-search")
     public Page<Book> fullTextSearch(
             @RequestParam String query,
