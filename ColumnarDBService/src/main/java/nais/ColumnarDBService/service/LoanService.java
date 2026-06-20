@@ -308,7 +308,7 @@ public class LoanService {
         }
     }
 
-    @CacheEvict(value = "loans", key = "#loanId")
+   
     public void compensateReturnBook(UUID memberId, UUID loanId, UUID bookId, String bookGenre, String bookTitle,
                                       String returnDate, LocalDateTime returnTimestamp) {
         try {
