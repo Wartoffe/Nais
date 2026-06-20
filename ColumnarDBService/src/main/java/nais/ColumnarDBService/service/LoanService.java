@@ -295,6 +295,7 @@ public class LoanService {
                 .sorted(Comparator.comparingLong(TopBorrowedBookDTO::getTotalLoans).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
     // ── Saga compensation ──────────────────────────────────────────────────
     //
     // Both methods below fully reverse a createLoan/returnBook that already
