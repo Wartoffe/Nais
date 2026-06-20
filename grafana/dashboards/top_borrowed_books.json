@@ -1,0 +1,511 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "yesoreyeram-infinity-datasource",
+      "name": "Infinity",
+      "version": "2.0.0"
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 20,
+      "title": " SLOZENA SEKCIJA – Top pozajmljivane knjige u odabranom žanru",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_LIBRARYAPI}"
+      },
+      "description": "Broj knjiga prikazanih u TOP listi (na osnovu izabranog limita).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 21,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "count"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Broj knjiga u TOP listi",
+      "type": "stat",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "count"
+            ],
+            "mode": "reduceFields",
+            "includeTimeField": false
+          }
+        }
+      ],
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_LIBRARYAPI}"
+          },
+          "refId": "A",
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://library-service:9060/loans/top-borrowed?genre=${genre}&limit=${limit}",
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "bookId",
+              "text": "ID Knjige",
+              "type": "string"
+            }
+          ],
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_LIBRARYAPI}"
+      },
+      "description": "Najveći zabeleženi broj pozajmica među prikazanim knjigama (TOP 1 u listi).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "title": "Najveći broj pozajmica (TOP 1)",
+      "type": "stat",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "max"
+            ],
+            "mode": "reduceFields",
+            "includeTimeField": false
+          }
+        }
+      ],
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_LIBRARYAPI}"
+          },
+          "refId": "A",
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://library-service:9060/loans/top-borrowed?genre=${genre}&limit=${limit}",
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "totalLoans",
+              "text": "Broj pozajmica",
+              "type": "number"
+            }
+          ],
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_LIBRARYAPI}"
+      },
+      "description": "Horizontalni bar grafikon TOP knjiga u žanru po ukupnom broju pozajmica, sortirano opadajuće.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Broj pozajmica",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 8,
+        "y": 1
+      },
+      "id": 23,
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "xTickLabelRotation": 0,
+        "barWidth": 0.7,
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "title": "TOP ${limit} najpozajmljivanijih knjiga – žanr: ${genre}",
+      "type": "barchart",
+      "transformations": [
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Broj pozajmica",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_LIBRARYAPI}"
+          },
+          "refId": "B",
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://library-service:9060/loans/top-borrowed?genre=${genre}&limit=${limit}",
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "title",
+              "text": "Naslov",
+              "type": "string"
+            },
+            {
+              "selector": "totalLoans",
+              "text": "Broj pozajmica",
+              "type": "number"
+            }
+          ],
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_LIBRARYAPI}"
+      },
+      "description": "Detaljna tabela TOP pozajmljivanih knjiga u izabranom žanru. Grupisano po naslovu i žanru, sa ukupnim brojem pozajmica i brojem trenutno dostupnih primeraka. Sortirano opadajuće po broju pozajmica.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": true,
+            "minWidth": 100
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Broj pozajmica"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "continuous-GrYlRd"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Dostupno primeraka"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "green",
+                      "value": 3
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "id": 24,
+      "options": {
+        "footer": {
+          "show": true,
+          "reducer": [
+            "count"
+          ],
+          "fields": [
+            "ID Knjige"
+          ]
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Broj pozajmica",
+            "desc": true
+          }
+        ]
+      },
+      "title": "TOP ${limit} knjiga po broju pozajmica – žanr: ${genre}",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_LIBRARYAPI}"
+          },
+          "refId": "C",
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://library-service:9060/loans/top-borrowed?genre=${genre}&limit=${limit}",
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "bookId",
+              "text": "ID Knjige",
+              "type": "string"
+            },
+            {
+              "selector": "title",
+              "text": "Naslov",
+              "type": "string"
+            },
+            {
+              "selector": "genre",
+              "text": "Žanr",
+              "type": "string"
+            },
+            {
+              "selector": "author",
+              "text": "Autor",
+              "type": "string"
+            },
+            {
+              "selector": "totalLoans",
+              "text": "Broj pozajmica",
+              "type": "number"
+            },
+            {
+              "selector": "availableCopies",
+              "text": "Dostupno primeraka",
+              "type": "number"
+            },
+            {
+              "selector": "totalCopies",
+              "text": "Ukupno primeraka",
+              "type": "number"
+            }
+          ],
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          }
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_LIBRARYAPI",
+        "type": "datasource",
+        "pluginId": "yesoreyeram-infinity-datasource",
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "options": [],
+        "query": "yesoreyeram-infinity-datasource",
+        "refresh": 1
+      },
+      {
+        "name": "genre",
+        "label": "Žanr",
+        "type": "custom",
+        "current": {
+          "text": "Istorija",
+          "value": "Istorija"
+        },
+        "options": [
+          {
+            "text": "Istorija",
+            "value": "Istorija"
+          },
+          {
+            "text": "Roman",
+            "value": "Roman"
+          },
+          {
+            "text": "Naucna fantastika",
+            "value": "Naucna fantastika"
+          }
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "query": "Istorija,Roman,Naucna fantastika"
+      },
+      {
+        "name": "limit",
+        "label": "Broj knjiga (TOP N)",
+        "type": "textbox",
+        "current": {
+          "text": "10",
+          "value": "10"
+        },
+        "hide": 0,
+        "query": "2"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Biblioteka – Top pozajmljivane knjige po žanru",
+  "uid": "library-top-borrowed-books",
+  "version": 1
+}

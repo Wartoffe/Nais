@@ -1,9 +1,6 @@
 package nais.ColumnarDBService.service;
 
-import nais.ColumnarDBService.dto.BookDTO;
-import nais.ColumnarDBService.dto.LoanDTO;
-import nais.ColumnarDBService.dto.ReturnDTO;
-import nais.ColumnarDBService.dto.ReturnRequestDTO;
+import nais.ColumnarDBService.dto.*;
 import nais.ColumnarDBService.entity.BookByGenre;
 import nais.ColumnarDBService.entity.LoanByBook;
 import nais.ColumnarDBService.entity.LoanByMember;
@@ -24,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -278,6 +276,25 @@ public class LoanService {
                 .collect(Collectors.toList());
     }
 
+    public List<TopBorrowedBookDTO> getTopBorrowedBooksByGenre(String genre, int limit) {
+        List<BookByGenre> booksInGenre = bookByGenreRepository.findByGenre(genre);
+
+        return booksInGenre.stream()
+                .map(book -> {
+                    Long totalLoans = loanByBookRepository.countByBookId(book.getBookId());
+                    return new TopBorrowedBookDTO(
+                            book.getBookId(),
+                            book.getTitle(),
+                            book.getGenre(),
+                            book.getAuthor(),
+                            totalLoans != null ? totalLoans : 0L,
+                            book.getAvailableCopies(),
+                            book.getTotalCopies()
+                    );
+                })
+                .sorted(Comparator.comparingLong(TopBorrowedBookDTO::getTotalLoans).reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
     // ── Saga compensation ──────────────────────────────────────────────────
     //
     // Both methods below fully reverse a createLoan/returnBook that already
