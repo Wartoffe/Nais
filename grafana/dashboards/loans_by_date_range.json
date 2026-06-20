@@ -8,15 +8,6 @@
       "version": "2.0.0"
     }
   ],
-  "annotations": {
-    "list": []
-  },
-  "description": "Izveštaj biblioteke – Prosta sekcija: Pozajmice u datumskom opsegu",
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 1,
-  "id": null,
-  "links": [],
   "panels": [
     {
       "collapsed": false,
@@ -75,7 +66,7 @@
           "calcs": [
             "count"
           ],
-          "fields": "",
+          "fields": "/.*/",
           "values": false
         },
         "textMode": "auto"
@@ -99,94 +90,6 @@
               "selector": "loanId",
               "text": "ID Pozajmice",
               "type": "string"
-            }
-          ],
-          "url_options": {
-            "method": "GET",
-            "data": ""
-          }
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "yesoreyeram-infinity-datasource",
-        "uid": "${DS_LIBRARYAPI}"
-      },
-      "description": "Broj pozajmica koje su još uvek aktivne (knjiga nije vraćena).",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 5
-              },
-              {
-                "color": "red",
-                "value": 15
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 1
-      },
-      "id": 2,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "count"
-          ],
-          "fields": "/^Aktivne$/",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "title": "Aktivne pozajmice",
-      "type": "stat",
-      "targets": [
-        {
-          "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "${DS_LIBRARYAPI}"
-          },
-          "refId": "B",
-          "type": "json",
-          "source": "url",
-          "format": "table",
-          "url": "http://library-service:9060/loans/range?from=${__from:date:YYYY-MM-DD}&to=${__to:date:YYYY-MM-DD}",
-          "root_selector": "",
-          "columns": [
-            {
-              "selector": "returned",
-              "text": "Aktivne",
-              "type": "boolean"
-            }
-          ],
-          "filters": [
-            {
-              "field": "returned",
-              "operator": "eq",
-              "value": false
             }
           ],
           "url_options": {
@@ -225,7 +128,7 @@
                     "type": "value",
                     "options": {
                       "true": {
-                        "text": "✅ Vraćena",
+                        "text": "Vraćena",
                         "color": "green"
                       }
                     }
@@ -234,7 +137,7 @@
                     "type": "value",
                     "options": {
                       "false": {
-                        "text": "⏳ Aktivna",
+                        "text": "Aktivna",
                         "color": "yellow"
                       }
                     }
@@ -279,7 +182,7 @@
         "x": 0,
         "y": 5
       },
-      "id": 3,
+      "id": 2,
       "options": {
         "footer": {
           "show": true,
@@ -329,8 +232,8 @@
               "type": "string"
             },
             {
-              "selector": "memberName",
-              "text": "Član",
+              "selector": "memberId",
+              "text": "Član ID",
               "type": "string"
             },
             {
@@ -362,18 +265,10 @@
       ]
     }
   ],
-  "refresh": "30s",
-  "schemaVersion": 38,
-  "tags": [
-    "biblioteka",
-    "pozajmice",
-    "izvestaj"
-  ],
   "templating": {
     "list": [
       {
         "name": "DS_LIBRARYAPI",
-        "label": "Library API",
         "type": "datasource",
         "pluginId": "yesoreyeram-infinity-datasource",
         "current": {},
@@ -383,58 +278,6 @@
         "options": [],
         "query": "yesoreyeram-infinity-datasource",
         "refresh": 1
-      },
-      {
-        "name": "from",
-        "label": "Od datuma (info)",
-        "description": "Informativno: stvarni opseg upita određuje Grafana time picker gore desno (koristi se $__from/$__to u upitima).",
-        "type": "custom",
-        "current": {
-          "text": "now-30d",
-          "value": "now-30d"
-        },
-        "options": [
-          {
-            "text": "Poslednja nedelja",
-            "value": "now-7d"
-          },
-          {
-            "text": "Poslednji mesec",
-            "value": "now-30d"
-          },
-          {
-            "text": "Poslednja 3 meseca",
-            "value": "now-90d"
-          },
-          {
-            "text": "Poslednja godina",
-            "value": "now-1y"
-          }
-        ],
-        "hide": 0,
-        "includeAll": false,
-        "multi": false,
-        "query": "now-7d,now-30d,now-90d,now-1y"
-      },
-      {
-        "name": "to",
-        "label": "Do datuma (info)",
-        "description": "Informativno: stvarni opseg upita određuje Grafana time picker gore desno (koristi se $__from/$__to u upitima).",
-        "type": "custom",
-        "current": {
-          "text": "Danas",
-          "value": "now"
-        },
-        "options": [
-          {
-            "text": "Danas",
-            "value": "now"
-          }
-        ],
-        "hide": 0,
-        "includeAll": false,
-        "multi": false,
-        "query": "now"
       }
     ]
   },
