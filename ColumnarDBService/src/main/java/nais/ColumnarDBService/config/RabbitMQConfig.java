@@ -16,19 +16,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
 
-/**
- * Declares the choreography saga's RabbitMQ topology for ColumnarDBService.
- *
- * This service is the producer of *_REQUESTED events (createLoan /
- * returnBook) and the consumer of *_COMPLETED / *_FAILED events, which it
- * binds into its own results queue on the shared topic exchange.
- *
- * The message converter uses a logical type id ("BookVisibilitySagaEvent")
- * instead of the fully-qualified class name, so that this service's own
- * local copy of the DTO can be (de)serialized even though the search
- * service has its own separate copy of the same class in a different
- * package.
- */
+
 @Configuration
 public class RabbitMQConfig {
 

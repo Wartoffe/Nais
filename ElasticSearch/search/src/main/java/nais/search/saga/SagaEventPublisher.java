@@ -6,11 +6,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * Publishes the result of a hide/unhide request back onto the shared saga
- * exchange so ColumnarDBService can react: log on success, or compensate
- * (roll back the originating createLoan/returnBook) on failure.
- */
 @Component
 public class SagaEventPublisher {
 

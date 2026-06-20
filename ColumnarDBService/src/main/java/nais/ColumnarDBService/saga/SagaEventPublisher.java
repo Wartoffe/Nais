@@ -9,15 +9,8 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Publishes hide/unhide requests onto the shared saga exchange so the
- * search service can keep Elasticsearch's visible/hidden book state in
- * sync with Cassandra's available-copies count.
- * <p>
- * Both events are only ever published *after* the local Cassandra writes
- * for the originating createLoan/returnBook call have already succeeded
- * -- a saga step should never announce a state that hasn't actually been
- * committed locally yet.
+/*
+ postavlja hide/unhide requests
  */
 @Component
 public class SagaEventPublisher {
@@ -37,9 +30,9 @@ public class SagaEventPublisher {
         this.unhideRequestedRoutingKey = unhideRequestedRoutingKey;
     }
 
-    /**
-     * Published by createLoan once availableCopies has just dropped to 0.
-     */
+
+     //poziva se iz createLoan
+
     public UUID publishHideRequested(String isbn, UUID bookId, String bookTitle, String bookGenre,
                                       UUID loanId, UUID memberId, LocalDateTime loanDate) {
         UUID sagaId = UUID.randomUUID();
@@ -58,9 +51,7 @@ public class SagaEventPublisher {
         return sagaId;
     }
 
-    /**
-     * Published by returnBook once availableCopies has just risen from 0.
-     */
+    //poziva se iz returnBook
     public UUID publishUnhideRequested(String isbn, UUID bookId, String bookTitle, String bookGenre,
                                         UUID loanId, UUID memberId, LocalDateTime loanDate,
                                         String returnDate, LocalDateTime returnTimestamp) {

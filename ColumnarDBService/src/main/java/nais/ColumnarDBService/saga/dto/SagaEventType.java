@@ -1,22 +1,14 @@
 package nais.ColumnarDBService.saga.dto;
 
-/**
- * The set of events exchanged on the "library.saga.exchange" topic
- * exchange between ColumnarDBService and the Elasticsearch search
- * service, as part of the choreography saga that keeps book
- * availability (Cassandra) and book visibility (Elasticsearch) in
- * sync.
- *
- * Flow:
- *  - LoanService.createLoan drops availableCopies to 0
- *      -> publishes HIDE_REQUESTED
- *  - LoanService.returnBook raises availableCopies from 0
- *      -> publishes UNHIDE_REQUESTED
- *  - The search service consumes *_REQUESTED, performs the logical
- *    delete/undelete locally, and publishes back *_COMPLETED on
- *    success or *_FAILED on failure.
- *  - This service consumes *_FAILED and compensates (rolls back) the
- *    original createLoan/returnBook transaction.
+/*
+   Logika funkcionisanja:
+
+   LoanService.createLoan spusti availableCopies na 0
+       -> salje se HIDE_REQUESTED da bi elastic sakrio knjigu iz pretrage
+   LoanService.returnBook poveca availableCopies sa 0
+       -> salje se UNHIDE_REQUESTED da bi elastic vratio knjigu u pretragu
+   Elastic prihvata *_REQUESTED i salje nazad *_COMPLETED ako je uspesno ili *_FAILED ako je nauspesno
+   Ovaj servis ceka *_FAILED i rollbackuje prethodni deo
  */
 public enum SagaEventType {
     HIDE_REQUESTED,

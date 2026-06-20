@@ -7,19 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Choreography saga participant on the ColumnarDBService side.
- * <p>
- * Consumes the *_COMPLETED / *_FAILED events published by the search
- * service in response to a HIDE_REQUESTED / UNHIDE_REQUESTED event. A
- * *_FAILED event means the search service could not hide/unhide the book
- * in Elasticsearch, so the createLoan/returnBook that triggered the
- * request must be rolled back here to keep both stores consistent.
- * <p>
- * Like the search service's listener, exceptions are caught rather than
- * rethrown so a message is never endlessly redelivered; a failure to
- * compensate is logged for an operator to investigate instead.
- */
+
+
+//ceka na *_COMPLETED / *_FAILED
+
 @Component
 public class BookVisibilitySagaListener {
 

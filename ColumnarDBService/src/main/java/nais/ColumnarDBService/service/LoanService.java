@@ -14,6 +14,7 @@ import nais.ColumnarDBService.saga.SagaEventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -63,10 +64,7 @@ public class LoanService {
         dto.setReturned(false);
         dto.setLoanDurationDays(0);
 
-        // From here on, availableCopies has already been decremented, so any
-        // failure (including failing to publish the saga event) must roll
-        // everything in this method back to leave Cassandra exactly as it
-        // was before createLoan was called.
+
         try {
             LoanByMember loanByMember = mapper.loanDTOToLoanByMember(dto);
             loanByMemberRepository.save(loanByMember);
@@ -76,10 +74,7 @@ public class LoanService {
             UUID bookUUID = dto.getBookId();
             BookByGenre book = bookByGenreRepository.findByBookId(bookUUID);
 
-            // availableCopies was just decremented above (via
-            // decreaseAvailableCopies); if it is now 0, this loan is the one
-            // that took the last copy, so the book must disappear from
-            // search results until a copy is returned.
+
             if (book.getAvailableCopies() == 0) {
                 sagaEventPublisher.publishHideRequested(
                         book.getIsbn(), dto.getBookId(), dto.getBookTitle(), dto.getBookGenre(),
@@ -136,6 +131,7 @@ public class LoanService {
     public Long countLoansByBook(UUID bookId) {
         return loanByBookRepository.countByBookId(bookId);
     }
+    @CacheEvict(value = "loans", key = "#request.loanId")
     public ReturnDTO returnBook(ReturnRequestDTO request) {
 
 
@@ -155,10 +151,7 @@ public class LoanService {
         UUID bookUUID= request.getBookId();
         BookByGenre book= bookByGenreRepository.findByBookId(bookUUID);
 
-        // Captured BEFORE availableCopies is incremented below: if the book
-        // currently has zero available copies, this particular return is
-        // the one that brings it back into circulation, so Elasticsearch
-        // needs to unhide it once the increment actually happens.
+
         boolean shouldUnhide = (book.getAvailableCopies() == 0);
         String isbn = book.getIsbn();
 
@@ -211,11 +204,7 @@ public class LoanService {
             log.warn("returnBook failed for member {} / loan {}, rolling back: {}",
                     request.getMemberId(), request.getLoanId(), ex.getMessage());
 
-            // Local rollback: only undo what actually happened above. The
-            // loanByMember object already in scope is reverted in place;
-            // the available-copies increment is only undone if it actually
-            // ran (guarded by copiesIncreased) so we never double-decrement
-            // a count that was never incremented in the first place.
+
             try {
                 loanByMember.setReturned(false);
                 loanByMember.setReturnDate(null);
@@ -257,6 +246,7 @@ public class LoanService {
         }
     }
 
+    @CacheEvict(value = "loans", key = "#loanId")
     public void deleteLoan(UUID memberId, LocalDateTime loanDate, UUID loanId,
                            UUID bookId) {
         loanByMemberRepository.deleteLoan(memberId, loanDate, loanId);
@@ -296,26 +286,9 @@ public class LoanService {
                 .limit(limit)
                 .collect(Collectors.toList());
     }
-    // ── Saga compensation ──────────────────────────────────────────────────
-    //
-    // Both methods below fully reverse a createLoan/returnBook that already
-    // committed locally. They are invoked from two places:
-    //  1. Internally, right after a local failure during createLoan/
-    //     returnBook itself (see the catch blocks above).
-    //  2. By BookVisibilitySagaListener, when the search service reports
-    //     that it could not hide/unhide the corresponding book
-    //     (HIDE_FAILED / UNHIDE_FAILED) -- at that point createLoan/
-    //     returnBook had already returned successfully to the caller, so
-    //     this is the only way to undo it.
-    //
-    // Deletes against Cassandra are idempotent (deleting a row that isn't
-    // there is a no-op), so it's always safe to issue them even if the
-    // corresponding save never actually happened.
 
-    /**
-     * Reverses a createLoan: restores the available-copies count and
-     * removes the loan records that were created for it.
-     */
+
+    @CacheEvict(value = "loans", key = "#loanId")
     public void compensateCreateLoan(UUID memberId, LocalDateTime loanDate, UUID loanId, UUID bookId,
                                       String bookGenre, String bookTitle) {
         try {
@@ -335,11 +308,7 @@ public class LoanService {
         }
     }
 
-    /**
-     * Reverses a returnBook: puts the loan back into its "active" (not
-     * returned) state, removes the return record that was created, and
-     * undoes the available-copies increment.
-     */
+    @CacheEvict(value = "loans", key = "#loanId")
     public void compensateReturnBook(UUID memberId, UUID loanId, UUID bookId, String bookGenre, String bookTitle,
                                       String returnDate, LocalDateTime returnTimestamp) {
         try {

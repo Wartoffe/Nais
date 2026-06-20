@@ -7,20 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Choreography saga participant on the search service side.
- * <p>
- * Consumes HIDE_REQUESTED / UNHIDE_REQUESTED events published by
- * ColumnarDBService, performs the corresponding logical delete/undelete
- * locally, and reports the outcome back on the saga exchange.
- * <p>
- * Any exception is caught here on purpose: a thrown exception would let
- * RabbitMQ requeue/redeliver the message indefinitely (since no manual
- * ack/dead-lettering is configured), which would never let the saga reach
- * a terminal state. Instead, every failure is translated into an explicit
- * *_FAILED event, which is what actually drives compensation on the
- * ColumnarDBService side.
- */
 @Component
 public class BookVisibilitySagaListener {
 

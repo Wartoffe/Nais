@@ -235,31 +235,10 @@ public class BookService {
         return Optional.of(saved);
     }
 
-    /**
-     * Saga entry point used when ColumnarDBService.createLoan drops a
-     * book's available copies to zero: hides every Elasticsearch document
-     * matching the given ISBN.
-     * <p>
-     * If more than one document matches the ISBN and a save fails partway
-     * through the batch, every document already flipped in this call is
-     * rolled back to its original hidden state before the exception is
-     * propagated -- this is the local rollback/compensation for this
-     * function.
-     *
-     * @throws BookNotFoundException if no book in the index has this ISBN
-     */
     public List<Book> hideBooksByIsbn(String isbn) {
         return setHiddenByIsbn(isbn, true);
     }
 
-    /**
-     * Saga entry point used when ColumnarDBService.returnBook raises a
-     * book's available copies from zero: unhides every Elasticsearch
-     * document matching the given ISBN. Same local rollback guarantee as
-     * {@link #hideBooksByIsbn(String)}.
-     *
-     * @throws BookNotFoundException if no book in the index has this ISBN
-     */
     public List<Book> unhideBooksByIsbn(String isbn) {
         return setHiddenByIsbn(isbn, false);
     }
@@ -289,9 +268,7 @@ public class BookService {
                     alreadySaved.setHidden(originalHiddenByRecordId.get(alreadySaved.getRecordId()));
                     bookRepository.save(alreadySaved);
                 } catch (RuntimeException rollbackFailure) {
-                    // Best-effort local compensation: nothing more we can do
-                    // here; the inconsistency will surface to an operator via
-                    // the failed saga event raised by the caller.
+                 
                 }
             }
             throw ex;
