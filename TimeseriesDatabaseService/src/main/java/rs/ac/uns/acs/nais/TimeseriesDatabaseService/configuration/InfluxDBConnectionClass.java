@@ -101,6 +101,44 @@ public class InfluxDBConnectionClass {
         return mapStatusPromene(client.getQueryApi(), flux);
     }
 
+    /**
+     * Vraća samo NAJNOVIJI event za datu narudžbinu (poslednji status).
+     * Sortiranje i limit se rade u samom Flux upitu (na InfluxDB strani),
+     * tako da je garantovano da je vraćen red zaista poslednji po _time,
+     * bez obzira na to kojim redom InfluxDB klijent fizički vrati podatke.
+     */
+    public List<PromenaStatusaPorudzbine> findLastByNarudzbinaid(InfluxDBClient client, String narudzbinaid) {
+        String flux = String.format(
+                "from(bucket:\"%s\") " +
+                        "|> range(start: 0) " +
+                        "|> filter(fn: (r) => r[\"_measurement\"] == \"PromenaStatusaPorudzbine\") " +
+                        "|> filter(fn: (r) => r[\"narudzbinaid\"] == \"%s\") " +
+                        "|> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\") " +
+                        "|> sort(columns:[\"_time\"], desc: true) " +
+                        "|> limit(n: 1)",
+                bucket, narudzbinaid);
+        return mapStatusPromene(client.getQueryApi(), flux);
+    }
+
+    /**
+     * Vraća status koji je bio aktivan PRE poslednjeg upisanog eventa za datu narudžbinu
+     * (tj. drugi po redu od kraja, hronološki). Koristi se u kompenzaciji koreografisane SAGA:
+     * u trenutku kada CompensationListener obrađuje BookCreationFailedEvent, "poslednji" status
+     * je već onaj koji treba poništiti, pa nam treba upravo ovaj, pretposlednji.
+     */
+    public List<PromenaStatusaPorudzbine> findSecondToLastByNarudzbinaid(InfluxDBClient client, String narudzbinaid) {
+        String flux = String.format(
+                "from(bucket:\"%s\") " +
+                        "|> range(start: 0) " +
+                        "|> filter(fn: (r) => r[\"_measurement\"] == \"PromenaStatusaPorudzbine\") " +
+                        "|> filter(fn: (r) => r[\"narudzbinaid\"] == \"%s\") " +
+                        "|> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\") " +
+                        "|> sort(columns:[\"_time\"], desc: true) " +
+                        "|> limit(n: 1, offset: 1)",
+                bucket, narudzbinaid);
+        return mapStatusPromene(client.getQueryApi(), flux);
+    }
+
     /** Vraća sve evente određenog noviStatus u poslednjih N dana. */
     public List<PromenaStatusaPorudzbine> findAllByNoviStatus(InfluxDBClient client, String noviStatus, int days) {
         String flux = String.format(

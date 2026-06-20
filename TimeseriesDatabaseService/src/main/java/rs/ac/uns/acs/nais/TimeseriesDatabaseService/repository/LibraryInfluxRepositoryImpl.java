@@ -48,6 +48,22 @@ public class LibraryInfluxRepositoryImpl implements LibraryInfluxRepository {
     }
 
     @Override
+    public List<PromenaStatusaPorudzbine> findLastStatusByNarudzbinaid(String narudzbinaid) {
+        InfluxDBClient client = conn.buildConnection();
+        List<PromenaStatusaPorudzbine> result = conn.findLastByNarudzbinaid(client, narudzbinaid);
+        client.close();
+        return result;
+    }
+
+    @Override
+    public List<PromenaStatusaPorudzbine> findSecondToLastStatusByNarudzbinaid(String narudzbinaid) {
+        InfluxDBClient client = conn.buildConnection();
+        List<PromenaStatusaPorudzbine> result = conn.findSecondToLastByNarudzbinaid(client, narudzbinaid);
+        client.close();
+        return result;
+    }
+
+    @Override
     public List<PromenaStatusaPorudzbine> findStatusByNoviStatus(String noviStatus, int days) {
         InfluxDBClient client = conn.buildConnection();
         List<PromenaStatusaPorudzbine> result = conn.findAllByNoviStatus(client, noviStatus, days);

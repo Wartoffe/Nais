@@ -15,6 +15,8 @@ public interface LibraryInfluxRepository {
     Boolean saveStatusPromena(PromenaStatusaPorudzbine m);
     List<PromenaStatusaPorudzbine> findStatusByNarudzbinaid(String narudzbinaid);
     List<PromenaStatusaPorudzbine> findStatusByNoviStatus(String noviStatus, int days);
+    List<PromenaStatusaPorudzbine> findLastStatusByNarudzbinaid(String narudzbinaid);
+    List<PromenaStatusaPorudzbine> findSecondToLastStatusByNarudzbinaid(String narudzbinaid);
 
 
     // ── PromenaBudzetaPoZanru ─────────────────────────────────────
