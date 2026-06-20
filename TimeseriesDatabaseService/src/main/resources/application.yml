@@ -1,7 +1,6 @@
 server:
   port: 8084
 
-
 spring:
   application:
     name: timeseries-database-service
@@ -12,6 +11,11 @@ spring:
     url: http://localhost:8086
     user: nais
     password: password
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
   data:
     redis:
       host: timeseries-redis

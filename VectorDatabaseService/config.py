@@ -21,6 +21,13 @@ EUREKA_SERVER = os.getenv("EUREKA_CLIENT_SERVICEURL_DEFAULTZONE", "http://eureka
 # Hostname Redis kontejnera — mora odgovarati imenu servisa u docker-compose
 REDIS_HOST = os.getenv("REDIS_HOST", "redis-cache-books")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+
+# RabbitMQ konfiguracija
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
+RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
+RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
+RABBITMQ_URL  = f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/"
  
 # TTL-ovi u sekundama
 EXACT_CACHE_TTL    = int(os.getenv("EXACT_CACHE_TTL",    str(60 * 60)))   # 60 min
