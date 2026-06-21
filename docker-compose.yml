@@ -14,11 +14,15 @@ services:
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
       SERVER_PORT: 9050
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
     depends_on:
       neo4j:
         condition: service_healthy
       eureka-server:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     restart: on-failure
 
   eureka-server:
@@ -45,6 +49,24 @@ services:
       - eureka-server
     ports:
       - "9003:9000"
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    ports:
+      - "3000:3000"
+    depends_on:
+      - library-service
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      - ./grafana/book-report-dashboards:/etc/grafana/book-report-dashboards
+      - ./grafana/vector-report-dashboards:/etc/grafana/vector-report-dashboards
+      - ./grafana/timeseries-report-dashboards:/etc/grafana/timeseries-report-dashboards
+      - grafana_data:/var/lib/grafana
 
   etcd:
     container_name: milvus-etcd
@@ -140,13 +162,23 @@ services:
       SEMANTIC_CACHE_TTL: 3600       
       EMBED_INDEX_TTL: 3600  
       SEMANTIC_THRESHOLD: "0.95"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
     volumes:
       - ./VectorDatabaseService/data:/app/data:ro
     depends_on:
-      - eureka-server
-      - ollama
-      - standalone
-      - redis-cache-books
+      eureka-server:
+        condition: service_started
+      ollama:
+        condition: service_started
+      standalone:
+        condition: service_healthy
+      redis-cache-books:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 20s
@@ -173,7 +205,7 @@ services:
     environment:
       MILVUS_URL: standalone:19530
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       standalone:
         condition: service_healthy
@@ -192,9 +224,13 @@ services:
         condition: service_started
       elasticsearchbooks:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       SPRING_ELASTICSEARCH_URIS: http://elasticsearchbooks:9200
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
     ports:
       - "9081:9080"
 
@@ -287,11 +323,15 @@ services:
         condition: service_healthy
       timeseries-redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       SPRING_INFLUX_URL: http://influxdb:8086
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       SPRING_DATA_REDIS_HOST: timeseries-redis
       SPRING_DATA_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
     ports:
       - "9070:8084"
 
@@ -382,6 +422,25 @@ services:
     container_name: library-redis
     ports:
       - "6379:6379"
+
+  #
+  # ── RabbitMQ (choreography saga broker) ──────────────────────────────────
+  #
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: library-rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
   
   library-service:
     build:
@@ -396,6 +455,8 @@ services:
         condition: service_started
       eureka-server:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       # Cassandra
       SPRING_DATA_CASSANDRA_CONTACT_POINTS: cassandra
@@ -407,6 +468,11 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       EUREKA_CLIENT_ENABLED: "true"
       SERVER_PORT: 9060
+      # RabbitMQ (choreography saga)
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
   #
   # ── Elasticsearch + Search service ───────────────────────────────────────
   #
@@ -454,6 +520,14 @@ services:
           -H "Content-Type: application/x-ndjson" \
           --data-binary @/data/books_bulk.ndjson
 
+        echo "==> Refreshing books index..."
+        curl -s -X POST "http://elasticsearch-db:9200/books/_refresh"
+
+        echo "==> Backfilling hidden=false on imported books..."
+        curl -s -X POST "http://elasticsearch-db:9200/books/_update_by_query?conflicts=proceed" \
+          -H "Content-Type: application/json" \
+          -d '{"script": {"source": "ctx._source.hidden = false", "lang": "painless"}, "query": {"match_all": {}}}'
+
         echo "==> Importing persons..."
         curl -s -X POST "http://elasticsearch-db:9200/_bulk" \
           -H "Content-Type: application/x-ndjson" \
@@ -490,6 +564,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
       - SPRING_DATA_REDIS_HOST=elasticsearch-cache
       - SPRING_DATA_REDIS_PORT=6379
+      # RabbitMQ (choreography saga)
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
     depends_on:
       elasticsearch-db:
         condition: service_healthy
@@ -498,6 +577,8 @@ services:
       eureka-server:
         condition: service_started
       elasticsearch-cache:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     restart: on-failure
 
@@ -567,6 +648,8 @@ volumes:
   redis-data:
   postgres-data:
   elasticsearch-cache-data:
+  grafana_data:
+  rabbitmq_data:
   redis_cache_data: {}
 
 networks:

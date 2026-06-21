@@ -1,15 +1,14 @@
 package nais.ColumnarDBService.controller;
 
-import nais.ColumnarDBService.dto.LoanDTO;
-import nais.ColumnarDBService.dto.MemberDTO;
-import nais.ColumnarDBService.dto.ReturnDTO;
-import nais.ColumnarDBService.dto.ReturnRequestDTO;
+import nais.ColumnarDBService.dto.*;
 import nais.ColumnarDBService.service.LoanService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -81,6 +80,24 @@ public class LoanController {
         loanService.deleteLoan(memberId, LocalDateTime.parse(loanDate), loanId, bookId);
         return ResponseEntity.noContent().build();
     }
+
+    //za izvestaj
+    @GetMapping("/range")
+    public ResponseEntity<List<LoanDTO>> getLoansByDateRange(
+            @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam("to")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+
+        List<LoanDTO> loans = loanService.getLoansByDateRange(from, to);
+        return ResponseEntity.ok(loans);
+    }
+
+    @GetMapping("/top-borrowed")
+    public ResponseEntity<List<TopBorrowedBookDTO>> getTopBorrowedBooksByGenre(
+            @RequestParam String genre,
+            @RequestParam(defaultValue = "2") int limit){
+        return ResponseEntity.ok(loanService.getTopBorrowedBooksByGenre(genre,limit));
+    }
+
 
 
 }

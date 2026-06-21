@@ -96,7 +96,14 @@ public class LibraryInfluxService {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (FluxRecord record : records) {
             Map<String, Object> row = new LinkedHashMap<>();
-            record.getValues().forEach((key, value) -> row.put(key, normalizeValue(value)));
+            if (record.getTime() != null) {
+                row.put("_time", record.getTime().toString());
+            }
+            record.getValues().forEach((key, value) -> {
+                if (!key.equals("_time")) {
+                    row.put(key, normalizeValue(value));
+                }
+            });
             rows.add(row);
         }
         return rows;

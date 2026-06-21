@@ -1,24 +1,31 @@
 package rs.ac.uns.acs.nais.TimeseriesDatabaseService.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rs.ac.uns.acs.nais.TimeseriesDatabaseService.dto.UnosKnjigaIPromenaStatusaPorudzbineDTO;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaBudzetaPoZanru;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaPredlogaZaNabavku;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.model.PromenaStatusaPorudzbine;
+import rs.ac.uns.acs.nais.TimeseriesDatabaseService.saga.choreography.SagaChoreographyService;
 import rs.ac.uns.acs.nais.TimeseriesDatabaseService.service.LibraryInfluxService;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/library-influx")
 public class LibraryInfluxController {
 
     private final LibraryInfluxService service;
 
-    public LibraryInfluxController(LibraryInfluxService service) {
+    private final SagaChoreographyService sagaChoreographyService;
+
+    public LibraryInfluxController(LibraryInfluxService service, SagaChoreographyService sagaChoreographyService) {
         this.service = service;
+        this.sagaChoreographyService = sagaChoreographyService;
     }
 
     // PromenaStatusaPorudzbine
@@ -32,6 +39,37 @@ public class LibraryInfluxController {
             return new ResponseEntity<>(true, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // Koreografisana SAGA
+    /* Zapocinje koregorafisani SAGA sablon za unos knjige koja je stigla porudzbinom i u vektorsku bazu za AI asistenta.
+     * Tok:
+     * 1. Upisuje se novi event statusa porudzbine.
+     * 2. Servis nad vektorskom bazom slusa i hvata event, nakon cega radi unos nove knjige i kreiranje vector embedding-a,
+     * 3. U slucaju da taj servis padne, objavljuje BookCreationFailedEvent.
+     * 4. CompensationListener slusa u slucaju objave i vraca prethodno aktivni status porudzbine (delete se ne radi u timeseries).
+     *
+     * @param request body koji sadrzi podatke o promeni statusa porudzbine, ali i o knjigama koje u njemu ucestvuju
+     * @return sagaId novokreirane SAGA instance
+     */
+    @PostMapping("/status-promene/save/saga")
+    public ResponseEntity<Map<String, String>> saveStatusPromenaSaga(@RequestBody UnosKnjigaIPromenaStatusaPorudzbineDTO zahtev) {
+        log.info("[CONTROLLER] POST /library-influx/status-promene/save/saga -- koreografisana saga -- zahtev: {}", zahtev);
+
+        try {
+            String sagaId = sagaChoreographyService.saveStatusPromena(zahtev);
+
+            log.info("[CONTROLLER] Koreografisana SAGA je pocela -- sagaId={}", sagaId);
+            return ResponseEntity.ok(Map.of(
+                    "sagaId", sagaId,
+                    "status", "STARTED",
+                    "message", "Koreografisana SAGA je pocela. Pratite logove za detalje."));
+
+        } catch (Exception e) {
+            log.error("[CONTROLLER] GRESKA kod pokreanja koreografisane SAGA: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 

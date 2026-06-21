@@ -9,3 +9,8 @@ Komanda za pokretanje potrebnih stvari za Marijin deo za KT2 je:
 ```
 docker-compose up -d eureka-server influxdb timeseries-service timeseries-redis --build
 ```
+
+Komanda za pokretanje potrebnih stvari za FKT (Marija i Nenad):
+```
+docker-compose up -d etcd minio standalone ollama redis-cache-books eureka-server vector-database-service streamlit attu elasticsearchbooks elasticsearchbooks-init kibanabooks elastic-search-books-reviews-service influxdb timeseries-service timeseries-redis rabbitmq gateway-api grafana library-service cassandra redis --build
+```
