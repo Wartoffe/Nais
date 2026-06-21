@@ -26,7 +26,6 @@ import java.util.List;
 @Slf4j
 @Component
 public class CompensationListener {
-
     private final LibraryInfluxRepositoryImpl repository;
     private final RabbitTemplate rabbitTemplate;
 
@@ -37,40 +36,59 @@ public class CompensationListener {
 
     @RabbitListener(queues = RabbitMQConfig.BOOK_CREATE_FAILED_QUEUE)
     public void handleBookCreationFailed(BookCreationFailedEvent event) {
-        log.warn("[CHOREOGRAPHY] sagaId={} -- primljen BookCreationFailedEvent za narudzbinaid={}, razlog={}",
-                event.getSagaId(), event.getNarudzbinaid(), event.getRazlog());
+        log.warn("[CHOREOGRAPHY] sagaId={} -- primljen BookCreationFailedEvent za narudzbinaid={}, razlog={}", event.getSagaId(), event.getNarudzbinaid(), event.getRazlog());
 
-        List<PromenaStatusaPorudzbine> pretposlednji =
-                repository.findSecondToLastStatusByNarudzbinaid(event.getNarudzbinaid());
+        String prethodniStatus = event.getPrethodniStatus();
 
-        if (pretposlednji.isEmpty()) {
-            log.error("[CHOREOGRAPHY] sagaId={} -- nema pretposlednjeg statusa, kompenzacija nije moguca za narudzbinaid={}",
-                    event.getSagaId(), event.getNarudzbinaid());
+        if (prethodniStatus == null || prethodniStatus.isBlank()) {
+            log.error("[CHOREOGRAPHY] sagaId={} -- BookCreationFailedEvent ne sadrzi prethodniStatus, kompenzacija nije moguca za narudzbinaid={}", event.getSagaId(), event.getNarudzbinaid());
             return;
         }
 
-        PromenaStatusaPorudzbine prethodniStatus = pretposlednji.getFirst();
-        prethodniStatus.setTimestamp(Instant.now());
+        if ("NONE".equals(prethodniStatus)) {
+            // Korak 1 je bio prvi event uopste za ovu narudzbinu -- nema na sta da se vrati,
+            // pa kompenzacija ovde znaci samo audit zapis da je SAGA zavrsena neuspehom.
+            log.warn("[CHOREOGRAPHY] sagaId={} -- narudzbinaid={} nema prethodni status (NONE), kompenzacija se svodi na audit log", event.getSagaId(), event.getNarudzbinaid());
+            objaviKompenzaciju(event, prethodniStatus);
+            return;
+        }
+
+        // Uzimamo najnoviji upis kako bismo iz njega preuzeli sve potrebne tagove/fieldove
+        // (dobavljacid, dobavljacnaziv, vrednostNarudzbine, brojStavki...) -- jedino noviStatus
+        // i timestamp se mejaju, ostatak konteksta narudzbine ostaje isti.
+        List<PromenaStatusaPorudzbine> poslednjiUpisi = repository.findLastStatusByNarudzbinaid(event.getNarudzbinaid());
+
+        if (poslednjiUpisi.isEmpty()) {
+            log.error("[CHOREOGRAPHY] sagaId={} -- nije pronadjen nijedan upis za narudzbinaid={}, kompenzacija nije moguca", event.getSagaId(), event.getNarudzbinaid());
+            return;
+        }
+
+        PromenaStatusaPorudzbine korektivniZapis = poslednjiUpisi.get(0);
+        korektivniZapis.setPrethodniStatus(korektivniZapis.getNoviStatus());
+        korektivniZapis.setNoviStatus(prethodniStatus);
+        korektivniZapis.setTimestamp(Instant.now());
 
         try {
-            repository.saveStatusPromena(prethodniStatus);
-            log.info("[CHOREOGRAPHY] sagaId={} -- kompenzacija uspesna, narudzbinaid={} vracen na noviStatus={}",
-                    event.getSagaId(), event.getNarudzbinaid(), prethodniStatus.getNoviStatus());
+            repository.saveStatusPromena(korektivniZapis);
+            log.info("[CHOREOGRAPHY] sagaId={} -- kompenzacija uspesna, narudzbinaid={} vracen na noviStatus={}", event.getSagaId(), event.getNarudzbinaid(), prethodniStatus);
 
-            OrderStatusCompensatedEvent compensated = new OrderStatusCompensatedEvent(
-                    event.getSagaId(),
-                    event.getNarudzbinaid(),
-                    prethodniStatus.getNoviStatus(),
-                    LocalDateTime.now());
-
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.CHOREOGRAPHY_EXCHANGE,
-                    RabbitMQConfig.ORDERSTATUS_COMPENSATED_KEY,
-                    compensated);
-            log.info("[CHOREOGRAPHY] sagaId={} -- OrderStatusCompensatedEvent objavljen", event.getSagaId());
+            objaviKompenzaciju(event, prethodniStatus);
         } catch (Exception e) {
-            log.error("[CHOREOGRAPHY] sagaId={} -- GRESKA prilikom kompenzacije za narudzbinaid={}: {}",
-                    event.getSagaId(), event.getNarudzbinaid(), e.getMessage(), e);
+            log.error("[CHOREOGRAPHY] sagaId={} -- GRESKA prilikom kompenzacije za narudzbinaid={}: {}", event.getSagaId(), event.getNarudzbinaid(), e.getMessage(), e);
         }
+    }
+
+    private void objaviKompenzaciju(BookCreationFailedEvent event, String vracenNaStatus) {
+        OrderStatusCompensatedEvent compensated = new OrderStatusCompensatedEvent(
+                event.getSagaId(),
+                event.getNarudzbinaid(),
+                vracenNaStatus,
+                LocalDateTime.now());
+
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.CHOREOGRAPHY_EXCHANGE,
+                RabbitMQConfig.ORDERSTATUS_COMPENSATED_KEY,
+                compensated);
+        log.info("[CHOREOGRAPHY] sagaId={} -- OrderStatusCompensatedEvent objavljen", event.getSagaId());
     }
 }
