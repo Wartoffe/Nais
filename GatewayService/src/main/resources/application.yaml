@@ -50,4 +50,10 @@ spring:
             - Path=/elastic-search-books-reviews-service/**
           filters:
             - StripPrefix=1
-
+        
+        - id: timeseries-database-service
+          uri: lb://timeseries-database-service
+          predicates:
+            - Path=/timeseries-database-service/**
+          filters:
+            - StripPrefix=1
