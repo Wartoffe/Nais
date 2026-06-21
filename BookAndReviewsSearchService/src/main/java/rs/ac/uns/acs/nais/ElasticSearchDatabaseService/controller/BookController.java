@@ -7,9 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.ac.uns.acs.nais.ElasticSearchDatabaseService.model.Book;
+import rs.ac.uns.acs.nais.ElasticSearchDatabaseService.saga.choreography.SagaChoreographyService;
 import rs.ac.uns.acs.nais.ElasticSearchDatabaseService.service.impl.BookService;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST controller for book search and management backed by Elasticsearch.
@@ -32,10 +34,22 @@ import java.util.List;
 @RequestMapping("/books")
 public class BookController {
     private final BookService bookService;
+    private final SagaChoreographyService sagaChoreographyService;
 
-    public BookController(BookService bookService) {
+
+    public BookController(BookService bookService, SagaChoreographyService sagaChoreographyService) {
         this.bookService = bookService;
+        this.sagaChoreographyService = sagaChoreographyService;
     }
+
+
+    // Vracanje knjige dobavljacu (pokretanje SAGA procesa)
+    @PostMapping("/{id}/return-to-supplier")
+    public ResponseEntity<Map<String, String>> returnToSupplier(@PathVariable String id) {
+        String sagaId = sagaChoreographyService.vratiKnjiguDobavljacu(id);
+        return ResponseEntity.accepted().body(Map.of("sagaId", sagaId, "status", "SAGA_STARTED"));
+    }
+
 
     // CREATE
     @PostMapping
