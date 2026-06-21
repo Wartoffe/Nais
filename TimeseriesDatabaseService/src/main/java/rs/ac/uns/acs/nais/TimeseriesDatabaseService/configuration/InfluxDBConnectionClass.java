@@ -387,11 +387,13 @@ public class InfluxDBConnectionClass {
                         "|> filter(fn: (r) => r[\"_value\"] < 0.0) " +
                         "|> group(columns: [\"zanr\"]) " +
                         "|> aggregateWindow(every: 1mo, fn: sum, createEmpty: false) " +
-                        "|> map(fn: (r) => ({r with trosak: r._value * -1.0})) " +
+                        "|> map(fn: (r) => ({_time: r._time, zanr: r.zanr, trosak: r._value * -1.0})) " +
+                        "|> group() " +
                         "|> sort(columns: [\"_time\"])",
                 bucket, months);
         return getRawRecords(client.getQueryApi(), flux);
     }
+
 
     /**
      * Upit 3: Procenat odobrenih predloga po žanru.
