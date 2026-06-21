@@ -44,6 +44,7 @@ COPY controller/ ./controller/
 COPY ingest/     ./ingest/
 COPY data/       ./data/
 COPY utils/      ./utils/
+COPY saga/       ./saga/
 
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh

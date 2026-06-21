@@ -48,6 +48,22 @@ public class LibraryInfluxRepositoryImpl implements LibraryInfluxRepository {
     }
 
     @Override
+    public List<PromenaStatusaPorudzbine> findLastStatusByNarudzbinaid(String narudzbinaid) {
+        InfluxDBClient client = conn.buildConnection();
+        List<PromenaStatusaPorudzbine> result = conn.findLastByNarudzbinaid(client, narudzbinaid);
+        client.close();
+        return result;
+    }
+
+    @Override
+    public List<PromenaStatusaPorudzbine> findSecondToLastStatusByNarudzbinaid(String narudzbinaid) {
+        InfluxDBClient client = conn.buildConnection();
+        List<PromenaStatusaPorudzbine> result = conn.findSecondToLastByNarudzbinaid(client, narudzbinaid);
+        client.close();
+        return result;
+    }
+
+    @Override
     public List<PromenaStatusaPorudzbine> findStatusByNoviStatus(String noviStatus, int days) {
         InfluxDBClient client = conn.buildConnection();
         List<PromenaStatusaPorudzbine> result = conn.findAllByNoviStatus(client, noviStatus, days);
@@ -80,6 +96,14 @@ public class LibraryInfluxRepositoryImpl implements LibraryInfluxRepository {
     public List<PromenaBudzetaPoZanru> findBudzetByTipPromene(String tipPromene) {
         InfluxDBClient client = conn.buildConnection();
         List<PromenaBudzetaPoZanru> result = conn.findBudzetByTipPromene(client, tipPromene);
+        client.close();
+        return result;
+    }
+
+    @Override
+    public List<PromenaBudzetaPoZanru> findLastBudzetByZanr(String zanr) {
+        InfluxDBClient client = conn.buildConnection();
+        List<PromenaBudzetaPoZanru> result = conn.findLastBudzetByZanr(client, zanr);
         client.close();
         return result;
     }

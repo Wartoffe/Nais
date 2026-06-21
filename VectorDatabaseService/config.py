@@ -28,6 +28,23 @@ RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 RABBITMQ_URL  = f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/"
+
+# Koreografisana SAGA -- exchange, queue i routing-key nazivi.
+# MORAJU biti identicni vrednostima iz RabbitMQConfig.java u TimeseriesDatabaseService,
+# jer oba servisa komuniciraju preko istog exchange-a/queue-ova.
+CHOREOGRAPHY_EXCHANGE = "saga.choreography.exchange"
+
+ORDERSTATUS_CREATED_QUEUE = "orderstatus.created.queue"
+ORDERSTATUS_CREATED_KEY   = "orderstatus.created"
+
+BOOK_CREATED_QUEUE = "book.created.queue"
+BOOK_CREATED_KEY   = "book.created"
+
+BOOK_CREATE_FAILED_QUEUE = "book.create.failed.queue"
+BOOK_CREATE_FAILED_KEY   = "book.create.failed"
+
+ORDERSTATUS_COMPENSATED_QUEUE = "orderstatus.compensated.queue"
+ORDERSTATUS_COMPENSATED_KEY   = "orderstatus.compensated"
  
 # TTL-ovi u sekundama
 EXACT_CACHE_TTL    = int(os.getenv("EXACT_CACHE_TTL",    str(60 * 60)))   # 60 min
