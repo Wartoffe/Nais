@@ -1,0 +1,340 @@
+{
+  "id": null,
+  "uid": "vector-book-report",
+  "title": "Vector Report - Knjige i recenzije (Milvus)",
+  "description": "Izveštaj generisan nad vektorskom bazom podataka (Milvus): proste sekcije nad kolekcijama books i reviews, te složena sekcija koja kombinuje semantičku (vektorsku) pretragu opisa knjiga sa skalarnim filterima jezika i broja strana.",
+  "tags": ["biblioteka", "vector-db", "milvus", "izvestaj"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "graphTooltip": 0,
+  "refresh": "",
+  "time": { "from": "now-1y", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_VECTORAPI",
+        "type": "datasource",
+        "query": "yesoreyeram-infinity-datasource",
+        "label": "Vector API data source",
+        "hide": 0,
+        "current": {}
+      },
+      {
+        "name": "language",
+        "type": "textbox",
+        "label": "Jezik knjige",
+        "query": "en",
+        "current": { "text": "en", "value": "en" },
+        "hide": 0
+      },
+      {
+        "name": "min_rating",
+        "type": "textbox",
+        "label": "Minimalna ocena recenzije",
+        "query": "4",
+        "current": { "text": "4", "value": "4" },
+        "hide": 0
+      },
+      {
+        "name": "search_query",
+        "type": "textbox",
+        "label": "Opis (semantička pretraga)",
+        "query": "a thrilling adventure in space",
+        "current": { "text": "a thrilling adventure in space", "value": "a thrilling adventure in space" },
+        "hide": 0
+      },
+      {
+        "name": "min_pages",
+        "type": "textbox",
+        "label": "Min. broj strana",
+        "query": "100",
+        "current": { "text": "100", "value": "100" },
+        "hide": 0
+      },
+      {
+        "name": "max_pages",
+        "type": "textbox",
+        "label": "Max. broj strana",
+        "query": "500",
+        "current": { "text": "500", "value": "500" },
+        "hide": 0
+      },
+      {
+        "name": "top_k",
+        "type": "textbox",
+        "label": "Broj rezultata (top K)",
+        "query": "10",
+        "current": { "text": "10", "value": "10" },
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 10,
+      "type": "row",
+      "title": " PROSTA SEKCIJA - Knjige u odabranom jeziku",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Ukupno knjiga - jezik: ${language}",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] } },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["count"], "fields": "/^id$/", "values": false }, "textMode": "auto", "colorMode": "value", "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://vector-database-service:8000/api/v1/books/?language=${language}&limit=200",
+          "root_selector": "results",
+          "columns": [
+            { "selector": "id", "text": "id", "type": "number" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Lista knjiga - jezik: ${language}",
+      "gridPos": { "h": 9, "w": 18, "x": 6, "y": 1 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://vector-database-service:8000/api/v1/books/?language=${language}&limit=200",
+          "root_selector": "results",
+          "columns": [
+            { "selector": "id", "text": "ID", "type": "number" },
+            { "selector": "title", "text": "Naslov", "type": "string" },
+            { "selector": "author", "text": "Autor", "type": "string" },
+            { "selector": "isbn", "text": "ISBN", "type": "string" },
+            { "selector": "language", "text": "Jezik", "type": "string" },
+            { "selector": "publisher", "text": "Izdavač", "type": "string" },
+            { "selector": "pages", "text": "Broj strana", "type": "number" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": " PROSTA SEKCIJA - Recenzije sa minimalnom ocenom",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "panels": []
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Ukupno recenzija - ocena ≥ ${min_rating}",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 11 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "teal", "value": null }] } },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["count"], "fields": "/^review_id$/", "values": false }, "textMode": "auto", "colorMode": "value", "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://vector-database-service:8000/api/v1/reviews/?rating=${min_rating}&limit=200",
+          "root_selector": "results",
+          "columns": [
+            { "selector": "review_id", "text": "review_id", "type": "string" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "table",
+      "title": "Lista recenzija - ocena ≥ ${min_rating}",
+      "gridPos": { "h": 9, "w": 18, "x": 6, "y": 11 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://vector-database-service:8000/api/v1/reviews/?rating=${min_rating}&limit=200",
+          "root_selector": "results",
+          "columns": [
+            { "selector": "review_id", "text": "ID recenzije", "type": "string" },
+            { "selector": "book_id", "text": "ID knjige", "type": "number" },
+            { "selector": "isbn", "text": "ISBN", "type": "string" },
+            { "selector": "rating", "text": "Ocena", "type": "number" },
+            { "selector": "n_votes", "text": "Broj glasova", "type": "number" },
+            { "selector": "review_text", "text": "Tekst recenzije", "type": "string" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "type": "row",
+      "title": " SLOŽENA SEKCIJA - Semantička pretraga opisa knjiga (jezik + opseg strana)",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "panels": []
+    },
+    {
+      "id": 31,
+      "type": "stat",
+      "title": "Broj pronađenih knjiga",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 21 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "coral", "value": null }] } },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["count"], "fields": "/^id$/", "values": false }, "textMode": "auto", "colorMode": "value", "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://vector-database-service:8000/api/v1/books/search/filtered?query=${search_query}&language=${language}&min_pages=${min_pages}&max_pages=${max_pages}&top_k=${top_k}",
+          "root_selector": "results",
+          "columns": [
+            { "selector": "id", "text": "id", "type": "number" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "Najveće poklapanje (score)",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 21 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percentunit",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "coral", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["max"], "fields": "/^score$/", "values": false }, "textMode": "auto", "colorMode": "value", "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://vector-database-service:8000/api/v1/books/search/filtered?query=${search_query}&language=${language}&min_pages=${min_pages}&max_pages=${max_pages}&top_k=${top_k}",
+          "root_selector": "results",
+          "columns": [
+            { "selector": "score", "text": "score", "type": "number" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "type": "barchart",
+      "title": "TOP ${top_k} knjiga po stepenu poklapanja sa opisom",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 21 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit" },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Naslov",
+        "legend": { "showLegend": false }
+      },
+      "targets": [
+        {
+          "refId": "B",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://vector-database-service:8000/api/v1/books/search/filtered?query=${search_query}&language=${language}&min_pages=${min_pages}&max_pages=${max_pages}&top_k=${top_k}",
+          "root_selector": "results",
+          "columns": [
+            { "selector": "title", "text": "Naslov", "type": "string" },
+            { "selector": "score", "text": "Score", "type": "number" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "type": "table",
+      "title": "Detalji rezultata semantičke pretrage – upit: \"${search_query}\"",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 30 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "score" },
+            "properties": [{ "id": "unit", "value": "percentunit" }]
+          }
+        ]
+      },
+      "options": {},
+      "targets": [
+        {
+          "refId": "C",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_VECTORAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://vector-database-service:8000/api/v1/books/search/filtered?query=${search_query}&language=${language}&min_pages=${min_pages}&max_pages=${max_pages}&top_k=${top_k}",
+          "root_selector": "results",
+          "columns": [
+            { "selector": "id", "text": "ID knjige", "type": "number" },
+            { "selector": "title", "text": "Naslov", "type": "string" },
+            { "selector": "author", "text": "Autor", "type": "string" },
+            { "selector": "language", "text": "Jezik", "type": "string" },
+            { "selector": "pages", "text": "Broj strana", "type": "number" },
+            { "selector": "score", "text": "Score (poklapanje)", "type": "number" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: VectorAPI
+    uid: vector-api
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    isDefault: false
+    jsonData:
+      # Base URL vektorskog servisa (Milvus), dostupan unutar Docker mreze.
+      # Container "vector-database-service" je definisan u docker-compose.yml
+      # i slusa na portu 8000 (i interno i eksterno).
+      base_url: "http://vector-database-service:8000"
+    version: 1
+    editable: true
