@@ -1,9 +1,6 @@
 package rs.ac.uns.acs.nais.TimeseriesDatabaseService.saga.choreography.event;
 
-import rs.ac.uns.acs.nais.TimeseriesDatabaseService.dto.KnjigaDTO;
-
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class BookCreatedEvent {
     private String sagaId;
