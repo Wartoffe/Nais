@@ -23,6 +23,7 @@ public interface LibraryInfluxRepository {
     Boolean saveBudzetPromena(PromenaBudzetaPoZanru m);
     List<PromenaBudzetaPoZanru> findBudzetByZanr(String zanr);
     List<PromenaBudzetaPoZanru> findBudzetByTipPromene(String tipPromene);
+    List<PromenaBudzetaPoZanru> findLastBudzetByZanr(String zanr);
 
 
     // ── PromenaPredlogaZaNabavku ──────────────────────────────────

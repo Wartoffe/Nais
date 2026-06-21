@@ -100,6 +100,14 @@ public class LibraryInfluxRepositoryImpl implements LibraryInfluxRepository {
         return result;
     }
 
+    @Override
+    public List<PromenaBudzetaPoZanru> findLastBudzetByZanr(String zanr) {
+        InfluxDBClient client = conn.buildConnection();
+        List<PromenaBudzetaPoZanru> result = conn.findLastBudzetByZanr(client, zanr);
+        client.close();
+        return result;
+    }
+
 
     // ================================================================
     // PromenaPredlogaZaNabavku

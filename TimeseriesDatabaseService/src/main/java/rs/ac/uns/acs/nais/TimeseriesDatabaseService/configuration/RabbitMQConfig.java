@@ -4,10 +4,17 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import rs.ac.uns.acs.nais.TimeseriesDatabaseService.saga.choreography.event.BookReturnedToSupplierEvent;
+import rs.ac.uns.acs.nais.TimeseriesDatabaseService.saga.choreography.event.BudzetUpdateFailedEvent;
+import rs.ac.uns.acs.nais.TimeseriesDatabaseService.saga.choreography.event.BudzetUpdatedEvent;
+
+import java.util.Map;
+
 
 @Configuration
 public class RabbitMQConfig {
@@ -30,6 +37,20 @@ public class RabbitMQConfig {
     public static final String ORDERSTATUS_COMPENSATED_QUEUE  = "orderstatus.compensated.queue";
     public static final String ORDERSTATUS_COMPENSATED_KEY    = "orderstatus.compensated";
 
+
+    // =========================================================================
+    //  MARIJA konstante: vraćanje knjige dobavljaču
+    // =========================================================================
+    public static final String BOOK_RETURNED_TO_SUPPLIER_QUEUE = "book.returned.supplier.queue";
+    public static final String BOOK_RETURNED_TO_SUPPLIER_KEY   = "book.returned.supplier";
+
+    public static final String BUDGET_UPDATED_QUEUE = "budget.updated.queue";
+    public static final String BUDGET_UPDATED_KEY   = "budget.updated";
+
+    public static final String BUDGET_UPDATE_FAILED_QUEUE = "budget.update.failed.queue";
+    public static final String BUDGET_UPDATE_FAILED_KEY   = "budget.update.failed";
+
+
     // =========================================================================
     // Message converter and RabbitTemplate
     // =========================================================================
@@ -37,7 +58,19 @@ public class RabbitMQConfig {
     /** Converts Java objects to JSON messages and back for both sending and receiving. */
     @Bean
     public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        typeMapper.setTrustedPackages("*");
+        typeMapper.setIdClassMapping(Map.of(
+                "bookReturnedToSupplierEvent", BookReturnedToSupplierEvent.class,
+                "budgetUpdateFailedEvent", BudzetUpdateFailedEvent.class,
+                "budgetUpdatedEvent", BudzetUpdatedEvent.class
+        ));
+        converter.setJavaTypeMapper(typeMapper);
+
+        return converter;
     }
 
     /**
@@ -83,4 +116,18 @@ public class RabbitMQConfig {
     @Bean public Binding bookCreatedBinding()      { return BindingBuilder.bind(bookCreatedQueue()).to(choreographyExchange()).with(BOOK_CREATED_KEY); }
     @Bean public Binding bookCreateFailedBinding() { return BindingBuilder.bind(bookCreateFailedQueue()).to(choreographyExchange()).with(BOOK_CREATE_FAILED_KEY); }
     @Bean public Binding orderstatusCompensatedBinding() { return BindingBuilder.bind(orderstatusCompensatedQueue()).to(choreographyExchange()).with(ORDERSTATUS_COMPENSATED_KEY); }
+
+
+    // =========================================================================
+    //  MARIJA queue/binding beans: vraćanje knjige dobavljaču
+    // =========================================================================
+
+    @Bean public Queue bookReturnedToSupplierQueue() { return QueueBuilder.durable(BOOK_RETURNED_TO_SUPPLIER_QUEUE).build(); }
+    @Bean public Queue budgetUpdatedQueue()             { return QueueBuilder.durable(BUDGET_UPDATED_QUEUE).build(); }
+    @Bean public Queue budgetUpdateFailedQueue()         { return QueueBuilder.durable(BUDGET_UPDATE_FAILED_QUEUE).build(); }
+
+    @Bean public Binding bookReturnedToSupplierBinding() { return BindingBuilder.bind(bookReturnedToSupplierQueue()).to(choreographyExchange()).with(BOOK_RETURNED_TO_SUPPLIER_KEY); }
+    @Bean public Binding budgetUpdatedBinding()          { return BindingBuilder.bind(budgetUpdatedQueue()).to(choreographyExchange()).with(BUDGET_UPDATED_KEY); }
+    @Bean public Binding budgetUpdateFailedBinding()     { return BindingBuilder.bind(budgetUpdateFailedQueue()).to(choreographyExchange()).with(BUDGET_UPDATE_FAILED_KEY); }
+
 }

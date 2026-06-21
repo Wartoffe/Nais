@@ -230,6 +230,29 @@ public class InfluxDBConnectionClass {
         return mapBudzet(client.getQueryApi(), flux);
     }
 
+
+    // ******************************************************************************************************
+
+    // Vraca mi kao poslednje stanje budzeta po zanru
+    // Potreban je kako bih znala od kojih vrednosti polazim pri povracaju novca nakon vracanja knjige
+    public List<PromenaBudzetaPoZanru> findLastBudzetByZanr(InfluxDBClient client, String zanr) {
+        String flux = String.format(
+                "from(bucket:\"%s\") " +
+                        "|> range(start: 0) " +
+                        "|> filter(fn: (r) => r[\"_measurement\"] == \"PromenaBudzetaPoZanru\") " +
+                        "|> filter(fn: (r) => r[\"zanr\"] == \"%s\") " +
+                        "|> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\") " +
+                        "|> sort(columns:[\"_time\"], desc: true) " +
+                        "|> limit(n: 1)",
+                bucket, zanr);
+        return mapBudzet(client.getQueryApi(), flux);
+    }
+
+
+    // ******************************************************************************************************
+
+
+
     private List<PromenaBudzetaPoZanru> mapBudzet(QueryApi queryApi, String flux) {
         List<PromenaBudzetaPoZanru> result = new ArrayList<>();
         for (FluxTable table : queryApi.query(flux)) {
