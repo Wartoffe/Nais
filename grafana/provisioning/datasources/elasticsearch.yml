@@ -1,0 +1,18 @@
+apiVersion: 1
+
+datasources:
+  - name: Books - Elasticsearch
+    uid: es-books
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch-db:9200
+    database: "books"
+    isDefault: false
+    editable: true
+    jsonData:
+      timeField: "publishDate"
+      # elasticsearch-db is pinned to 9.0.1 in your compose file.
+      # If "Save & Test" complains about version detection, clear this
+      # field in the UI to let Grafana auto-detect instead.
+      esVersion: "8.0.0"
+      maxConcurrentShardRequests: 5
