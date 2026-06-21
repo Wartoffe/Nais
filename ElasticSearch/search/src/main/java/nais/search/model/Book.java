@@ -86,6 +86,15 @@ public class Book {
     @Field(type = FieldType.Keyword)
     private List<String> characters;
 
+    /**
+     * Logical-delete flag. When true, the book is hidden from every read path
+     * (direct lookups and search) even though the document still physically
+     * exists in the index. Defaults to false (visible) for every newly
+     * created book.
+     */
+    @Field(type = FieldType.Boolean)
+    private Boolean hidden = Boolean.FALSE;
+
     public Book() {
     }
 
@@ -312,5 +321,13 @@ public class Book {
 
     public void setCharacters(List<String> characters) {
         this.characters = characters;
+    }
+
+    public Boolean getHidden() {
+        return hidden;
+    }
+
+    public void setHidden(Boolean hidden) {
+        this.hidden = hidden;
     }
 }

@@ -15,9 +15,18 @@ public interface BookByGenreRepository extends CassandraRepository<BookByGenre, 
     @Query("SELECT * FROM books_by_genre WHERE genre = ?0")
     List<BookByGenre> findByGenre(String genre);
 
+    // genre = partition key, title/book_id = clustering columns in that order;
+    // querying by book_id alone needs ALLOW FILTERING since title isn't
+    // restricted (same pattern already used in LoanByMemberRepository).
+    @Query("SELECT * FROM books_by_genre WHERE book_id = ?0 ALLOW FILTERING")
+    BookByGenre findByBookId(UUID bookId);
+
     //broj knjiga u datom zanru
     @Query("SELECT COUNT(*) FROM books_by_genre WHERE genre = ?0")
     Long countByGenre(String genre);
     @Query("DELETE FROM books_by_genre WHERE genre = ?0 AND title = ?1 AND book_id = ?2")
     void deleteBook(String genre, String title, UUID bookId);
+
+    @Query("SELECT * FROM books_by_genre WHERE genre = ?0 AND title = ?1 AND book_id = ?2")
+    BookByGenre findByGenreAndTitleAndBookId(String genre, String title, UUID bookId);
 }
