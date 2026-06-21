@@ -1,0 +1,16 @@
+apiVersion: 1
+
+providers:
+  - name: "Book Reports"
+    orgId: 1
+    folder: "Book Reports"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      # Deliberately NOT /etc/grafana/dashboards - that path is already owned
+      # by the "Library Dashboards" provider and is scanned recursively, so
+      # nesting this dashboard inside it would load it twice (once into
+      # Biblioteka, once here). This uses its own dedicated mount instead -
+      # see the docker-compose.yml volume addition.
+      path: /etc/grafana/book-report-dashboards
