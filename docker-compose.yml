@@ -65,6 +65,7 @@ services:
       - ./grafana/dashboards:/etc/grafana/dashboards
       - ./grafana/book-report-dashboards:/etc/grafana/book-report-dashboards
       - ./grafana/vector-report-dashboards:/etc/grafana/vector-report-dashboards
+      - ./grafana/timeseries-report-dashboards:/etc/grafana/timeseries-report-dashboards
       - grafana_data:/var/lib/grafana
 
   etcd:

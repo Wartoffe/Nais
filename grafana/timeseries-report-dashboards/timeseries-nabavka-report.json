@@ -1,0 +1,331 @@
+{
+  "id": null,
+  "uid": "timeseries-nabavka-report",
+  "title": "Timeseries Report – Nabavka i budžet (InfluxDB)",
+  "description": "Izveštaj generisan nad bazom podataka vremenskih nizova (InfluxDB): proste sekcije nad promenama budžeta po žanru i statusima narudžbina, te složena sekcija sa analitikom prosečnog vremena isporuke po dobavljaču i mesečnom dinamikom trošenja budžeta.",
+  "tags": ["biblioteka", "timeseries-db", "influxdb", "izvestaj"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "graphTooltip": 0,
+  "refresh": "",
+  "time": { "from": "now-1y", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_TIMESERIESAPI",
+        "type": "datasource",
+        "query": "yesoreyeram-infinity-datasource",
+        "label": "Timeseries API data source",
+        "hide": 0,
+        "current": {}
+      },
+      {
+        "name": "zanr",
+        "type": "textbox",
+        "label": "Žanr",
+        "query": "FIKCIJA",
+        "current": { "text": "FIKCIJA", "value": "FIKCIJA" },
+        "hide": 0
+      },
+      {
+        "name": "novi_status",
+        "type": "textbox",
+        "label": "Status narudžbine",
+        "query": "ISPORUCENA",
+        "current": { "text": "ISPORUCENA", "value": "ISPORUCENA" },
+        "hide": 0
+      },
+      {
+        "name": "status_days",
+        "type": "textbox",
+        "label": "Broj dana unazad (statusi)",
+        "query": "90",
+        "current": { "text": "90", "value": "90" },
+        "hide": 0
+      },
+      {
+        "name": "isporuka_days",
+        "type": "textbox",
+        "label": "Broj dana unazad (vreme isporuke)",
+        "query": "90",
+        "current": { "text": "90", "value": "90" },
+        "hide": 0
+      },
+      {
+        "name": "budzet_months",
+        "type": "textbox",
+        "label": "Broj meseci unazad (budžet)",
+        "query": "12",
+        "current": { "text": "12", "value": "12" },
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 10,
+      "type": "row",
+      "title": " PROSTA SEKCIJA – Promene budžeta po žanru",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Ukupno eventa – žanr: ${zanr}",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] } },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["count"], "fields": "/^tipPromene$/", "values": false }, "textMode": "auto", "colorMode": "value", "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://timeseries-service:8084/library-influx/budzet-promene/findByZanr?zanr=${zanr}",
+          "root_selector": "",
+          "columns": [
+            { "selector": "tipPromene", "text": "tipPromene", "type": "string" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Lista promena budžeta – žanr: ${zanr}",
+      "gridPos": { "h": 9, "w": 18, "x": 6, "y": 1 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "timestamp" },
+            "properties": [{ "id": "unit", "value": "time: YYYY-MM-DD HH:mm:ss" }]
+          }
+        ]
+      },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://timeseries-service:8084/library-influx/budzet-promene/findByZanr?zanr=${zanr}",
+          "root_selector": "",
+          "columns": [
+            { "selector": "zanr", "text": "Žanr", "type": "string" },
+            { "selector": "tipPromene", "text": "Tip promene", "type": "string" },
+            { "selector": "promenaStanja", "text": "Promena stanja", "type": "number" },
+            { "selector": "raspolozivoStanje", "text": "Raspoloživo stanje", "type": "number" },
+            { "selector": "ukupniBudzet", "text": "Ukupni budžet", "type": "number" },
+            { "selector": "napomena", "text": "Napomena", "type": "string" },
+            { "selector": "timestamp", "text": "Vreme", "type": "timestamp" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": " PROSTA SEKCIJA – Statusi narudžbina u periodu",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "panels": []
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Ukupno eventa – status: ${novi_status} (${status_days} dana)",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 11 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "teal", "value": null }] } },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["count"], "fields": "/^narudzbinaid$/", "values": false }, "textMode": "auto", "colorMode": "value", "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://timeseries-service:8084/library-influx/status-promene/findByStatus?noviStatus=${novi_status}&days=${status_days}",
+          "root_selector": "",
+          "columns": [
+            { "selector": "narudzbinaid", "text": "narudzbinaid", "type": "string" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "table",
+      "title": "Lista narudžbina – status: ${novi_status}",
+      "gridPos": { "h": 9, "w": 18, "x": 6, "y": 11 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://timeseries-service:8084/library-influx/status-promene/findByStatus?noviStatus=${novi_status}&days=${status_days}",
+          "root_selector": "",
+          "columns": [
+            { "selector": "narudzbinaid", "text": "ID narudžbine", "type": "string" },
+            { "selector": "dobavljacnaziv", "text": "Dobavljač", "type": "string" },
+            { "selector": "prethodniStatus", "text": "Prethodni status", "type": "string" },
+            { "selector": "noviStatus", "text": "Novi status", "type": "string" },
+            { "selector": "minuteUCekanju", "text": "Minuta u čekanju", "type": "number" },
+            { "selector": "vrednostNarudzbine", "text": "Vrednost narudžbine", "type": "number" },
+            { "selector": "timestamp", "text": "Vreme", "type": "timestamp" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "type": "row",
+      "title": " SLOZENA SEKCIJA – Prosečno vreme isporuke i mesečna dinamika budžeta",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "panels": []
+    },
+    {
+      "id": 31,
+      "type": "stat",
+      "title": "Broj dobavljača u analizi",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 21 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "coral", "value": null }] } },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["count"], "fields": "/^dobavljacnaziv$/", "values": false }, "textMode": "auto", "colorMode": "value", "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://timeseries-service:8084/library-influx/analytics/vreme-isporuke?days=${isporuka_days}",
+          "root_selector": "",
+          "columns": [
+            { "selector": "dobavljacnaziv", "text": "dobavljacnaziv", "type": "string" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "type": "barchart",
+      "title": "Prosečno vreme isporuke po dobavljaču (min) – poslednjih ${isporuka_days} dana",
+      "gridPos": { "h": 9, "w": 18, "x": 6, "y": 21 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+      "fieldConfig": {
+        "defaults": { "unit": "m" },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Dobavljač",
+        "legend": { "showLegend": false }
+      },
+      "targets": [
+        {
+          "refId": "B",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://timeseries-service:8084/library-influx/analytics/vreme-isporuke?days=${isporuka_days}",
+          "root_selector": "",
+          "columns": [
+            { "selector": "dobavljacnaziv", "text": "Dobavljač", "type": "string" },
+            { "selector": "_value", "text": "Prosečno vreme (min)", "type": "number" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "type": "table",
+      "title": "Detalji – prosečno vreme isporuke po dobavljaču",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 30 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "C",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "table",
+          "url": "http://timeseries-service:8084/library-influx/analytics/vreme-isporuke?days=${isporuka_days}",
+          "root_selector": "",
+          "columns": [
+            { "selector": "dobavljacid", "text": "ID dobavljača", "type": "string" },
+            { "selector": "dobavljacnaziv", "text": "Dobavljač", "type": "string" },
+            { "selector": "_value", "text": "Prosečno vreme čekanja (min)", "type": "number" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "type": "timeseries",
+      "title": "Mesečna dinamika troška budžeta po žanru – poslednjih ${budzet_months} meseci",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 38 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+      "fieldConfig": {
+        "defaults": { "unit": "currencyRSD", "custom": { "drawStyle": "line", "lineInterpolation": "linear", "pointSize": 5, "showPoints": "always" } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "refId": "D",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${DS_TIMESERIESAPI}" },
+          "type": "json",
+          "source": "url",
+          "format": "timeseries",
+          "url": "http://timeseries-service:8084/library-influx/analytics/budzet-mesecno?months=${budzet_months}",
+          "root_selector": "",
+          "columns": [
+            { "selector": "_time", "text": "Vreme", "type": "timestamp" },
+            { "selector": "trosak", "text": "Trošak", "type": "number" },
+            { "selector": "zanr", "text": "Žanr", "type": "string" }
+          ],
+          "url_options": { "method": "GET", "data": "" }
+        }
+      ]
+    }
+  ]
+}
