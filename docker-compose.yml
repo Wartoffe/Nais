@@ -203,7 +203,7 @@ services:
     environment:
       MILVUS_URL: standalone:19530
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       standalone:
         condition: service_healthy
@@ -635,20 +635,6 @@ services:
       eureka-server:
         condition: service_started
     restart: on-failure
-  
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
 volumes:
   ollama_data: {}
