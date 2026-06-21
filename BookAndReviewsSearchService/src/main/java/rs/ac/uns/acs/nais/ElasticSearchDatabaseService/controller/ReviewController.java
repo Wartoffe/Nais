@@ -1,5 +1,8 @@
 package rs.ac.uns.acs.nais.ElasticSearchDatabaseService.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -78,8 +81,8 @@ public class ReviewController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Review>> getAllReviews() {
-        List<Review> reviews = reviewService.findAll();
+    public ResponseEntity<Page<Review>> getAllReviews(@PageableDefault(size = 20) Pageable pageable) {
+        Page<Review> reviews = reviewService.findAll(pageable);
         return ResponseEntity.ok(reviews);
     }
 
@@ -87,5 +90,11 @@ public class ReviewController {
     public ResponseEntity<List<Review>> getReviewsByIds(@RequestParam List<String> ids) {
         List<Review> reviews = reviewService.findAllById(ids);
         return ResponseEntity.ok(reviews);
+    }
+
+    // COMPLEX QUERIES
+    @GetMapping("/complex-query-2")
+    public List<ReviewService.BookReviewStats> getBookReviewStats(@RequestParam(defaultValue = "1") int minVotes, @RequestParam(defaultValue = "1") int minComments) {
+        return reviewService.complexSearch2(minVotes, minComments);
     }
 }

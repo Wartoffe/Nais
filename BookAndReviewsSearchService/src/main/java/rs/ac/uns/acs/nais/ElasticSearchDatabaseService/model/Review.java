@@ -31,33 +31,23 @@ public class Review {
     @Field(type = FieldType.Text, analyzer = "standard")
     private String reviewText;
 
-    @Field(
+    // ovako je nekad bilo, ali nazalost nije vise moguce
+    /*@Field(
             type = FieldType.Date,
             format = {},
             pattern = "EEE MMM d HH:mm:ss Z yyyy"
-    )
-    private ZonedDateTime dateAdded;
+    )*/
+    @Field(type = FieldType.Keyword)
+    private String dateAdded;
 
-    @Field(
-            type = FieldType.Date,
-            format = {},
-            pattern = "EEE MMM d HH:mm:ss Z yyyy"
-    )
-    private ZonedDateTime dateUpdated;
+    @Field(type = FieldType.Keyword)
+    private String dateUpdated;
 
-    @Field(
-            type = FieldType.Date,
-            format = {},
-            pattern = "EEE MMM d HH:mm:ss Z yyyy"
-    )
-    private ZonedDateTime readAt;
+    @Field(type = FieldType.Keyword)
+    private String readAt;
 
-    @Field(
-            type = FieldType.Date,
-            format = {},
-            pattern = "EEE MMM d HH:mm:ss Z yyyy"
-    )
-    private ZonedDateTime startedAt;
+    @Field(type = FieldType.Keyword)
+    private String startedAt;
 
     @Field(type = FieldType.Integer)
     private Integer nVotes;
@@ -65,7 +55,7 @@ public class Review {
     @Field(type = FieldType.Integer)
     private Integer nComments;
 
-    public Review(String reviewId, String userId, String bookId, Integer rating, String reviewText, ZonedDateTime dateAdded, ZonedDateTime dateUpdated, ZonedDateTime readAt, ZonedDateTime startedAt, Integer nVotes, Integer nComments) {
+    public Review(String reviewId, String userId, String bookId, Integer rating, String reviewText, String dateAdded, String dateUpdated, String readAt, String startedAt, Integer nVotes, Integer nComments) {
         this.reviewId = reviewId;
         this.userId = userId;
         this.bookId = bookId;

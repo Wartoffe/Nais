@@ -4,6 +4,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import aio_pika
+from config import RABBITMQ_URL
+
 from config import APP_HOST, APP_PORT
 from controller.books_controller import router as books_router
 from controller.chat_controller import router as chat_router
@@ -35,6 +38,14 @@ app.include_router(books_router)
 app.include_router(reviews_router)
 app.include_router(chat_router)
 
+@app.on_event("startup")
+async def startup_rabbitmq():
+    app.state.rabbitmq_connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    app.state.rabbitmq_channel = await app.state.rabbitmq_connection.channel()
+
+@app.on_event("shutdown")
+async def shutdown_rabbitmq():
+    await app.state.rabbitmq_connection.close()
 
 @app.get("/health", tags=["Health"])
 def health():

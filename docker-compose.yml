@@ -14,11 +14,15 @@ services:
       SPRING_NEO4J_AUTHENTICATION_USERNAME: neo4j
       SPRING_NEO4J_AUTHENTICATION_PASSWORD: password
       SERVER_PORT: 9050
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
     depends_on:
       neo4j:
         condition: service_healthy
       eureka-server:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     restart: on-failure
 
   eureka-server:
@@ -150,12 +154,29 @@ services:
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: qwen2.5:1.5b
       APP_PORT: 8000
+      REDIS_HOST: redis-cache-books
+      REDIS_PORT: 6379                 
+      EXACT_CACHE_TTL: 3600            
+      SEMANTIC_CACHE_TTL: 3600       
+      EMBED_INDEX_TTL: 3600  
+      SEMANTIC_THRESHOLD: "0.95"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
     volumes:
       - ./VectorDatabaseService/data:/app/data:ro
     depends_on:
-      - eureka-server
-      - ollama
-      - standalone
+      eureka-server:
+        condition: service_started
+      ollama:
+        condition: service_started
+      standalone:
+        condition: service_healthy
+      redis-cache-books:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 20s
@@ -187,6 +208,9 @@ services:
       standalone:
         condition: service_healthy
 
+  #
+  # Nenad KT2 ────────────────────────────────────────────────────────────────
+  #
   elastic-search-books-reviews-service:
     build:
       context: ./BookAndReviewsSearchService
@@ -198,9 +222,13 @@ services:
         condition: service_started
       elasticsearchbooks:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       SPRING_ELASTICSEARCH_URIS: http://elasticsearchbooks:9200
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
     ports:
       - "9081:9080"
 
@@ -243,6 +271,23 @@ services:
     depends_on:
       - elasticsearchbooks
 
+  redis-cache-books:
+    image: redis:7.2-alpine
+    container_name: redis-cache-books
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_cache_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  #
+  # ──────────────────────────────────────────────────────────────────────
+  #
+
   search-service:
     build:
       context: ./SearchServiceV/search-service
@@ -262,6 +307,66 @@ services:
         condition: service_started
     restart: on-failure
 
+
+  timeseries-service:
+    build:
+      context: ./TimeseriesDatabaseService
+      dockerfile: Dockerfile
+    image: timeseries-service:latest
+    restart: on-failure
+    depends_on:
+      eureka-server:
+        condition: service_started
+      influxdb:
+        condition: service_healthy
+      timeseries-redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_INFLUX_URL: http://influxdb:8086
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING_DATA_REDIS_HOST: timeseries-redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+    ports:
+      - "9070:8084"
+
+  influxdb:
+    image: influxdb:2.7.6
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: nais
+      DOCKER_INFLUXDB_INIT_PASSWORD: password
+      DOCKER_INFLUXDB_INIT_ORG: nais_org
+      DOCKER_INFLUXDB_INIT_BUCKET: nais_bucket
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  timeseries-redis:
+    image: redis:7-alpine
+    container_name: timeseries-redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  #
+  # ── Neo4j + Recommendation service ───────────────────────────────────────
+  #
   neo4j:
     image: neo4j:latest
     ports:
@@ -513,7 +618,7 @@ services:
       dockerfile: Dockerfile
     container_name: request-service
     ports:
-      - "8086:8080"
+      - "8087:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://request-db-postgres:5432/requestdb
       SPRING_DATASOURCE_USERNAME: postgres
@@ -530,11 +635,26 @@ services:
       eureka-server:
         condition: service_started
     restart: on-failure
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   ollama_data: {}
   neo4j_data:
   neo4j_logs:
+  influxdb_data: {}
   es_data:
     driver: local
   redis-data:
@@ -542,6 +662,7 @@ volumes:
   elasticsearch-cache-data:
   grafana_data:
   rabbitmq_data:
+  redis_cache_data: {}
 
 networks:
   nais-net:

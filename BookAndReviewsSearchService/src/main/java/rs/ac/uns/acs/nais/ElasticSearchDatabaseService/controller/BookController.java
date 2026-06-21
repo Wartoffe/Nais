@@ -1,5 +1,8 @@
 package rs.ac.uns.acs.nais.ElasticSearchDatabaseService.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -78,8 +81,8 @@ public class BookController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Book>> getAllBooks() {
-        List<Book> books = bookService.findAll();
+    public ResponseEntity<Page<Book>> getAllBooks(@PageableDefault(size = 20) Pageable pageable) {
+        Page<Book> books = bookService.findAll(pageable);
         return ResponseEntity.ok(books);
     }
 
@@ -87,5 +90,16 @@ public class BookController {
     public ResponseEntity<List<Book>> getBooksByIds(@RequestParam List<String> ids) {
         List<Book> books = bookService.findAllById(ids);
         return ResponseEntity.ok(books);
+    }
+
+    // COMPLEX QUERIES
+    @GetMapping("/complex-query-1")
+    public BookService.BookSearchResult fullTextSearch(@RequestParam String userInput, @RequestParam(defaultValue = "English") String language, @RequestParam(defaultValue = "50") int minPages, @RequestParam(defaultValue = "500") int maxPages) {
+        return bookService.complexSearch1(userInput, language, minPages, maxPages);
+    }
+
+    @GetMapping("/complex-query-3")
+    public BookService.BookSearchResult3 hiddenGemsSearch(@RequestParam String userInput) {
+        return bookService.complexSearch3(userInput);
     }
 }

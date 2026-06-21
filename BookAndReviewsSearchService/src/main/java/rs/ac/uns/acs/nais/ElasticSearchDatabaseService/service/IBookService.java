@@ -1,5 +1,7 @@
 package rs.ac.uns.acs.nais.ElasticSearchDatabaseService.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import rs.ac.uns.acs.nais.ElasticSearchDatabaseService.model.Book;
 
 import java.util.List;
@@ -19,6 +21,6 @@ public interface IBookService {
 
     // ── READ ─────────────────────────────────────────────────────────────────
     Optional<Book> findById(String id);
-    List<Book> findAll();
+    Page<Book> findAll(Pageable pageable);
     List<Book> findAllById(List<String> ids);
 }
